@@ -36,23 +36,67 @@ priest_init() ->
 priest(PList) ->
     Num = length(PList),
     MyCoin = random:uniform(Num),
-    if MyCoin =:= Num -> propose(PList);
-       MyCoin =/= Num -> accept()
+    if MyCoin =:= Num -> io:format("~p: I'm going to propose~n", [self()]),
+                         propose(PList);
+       MyCoin =/= Num -> io:format("~p: I'm going to accept~n", [self()]),
+                         accept(blank, blank)
     end.
 
 % what args does acceptor need?
 propose(PList) ->
+    io:format("pid ~p: I'm going to propose~n", [self()]),
+    NumPriests = length(PList) + 1,
     ProposalNumber = getpropnum(self()),
     TargetAcceptors = getquorum(PList),
+    ResponsesCountdown = NumPriests div 2 + NumPriests rem 2,
     lists:foreach(fun(AccPid) -> AccPid ! {self(), {prepare_request, ProposalNumber}} end, TargetAcceptors),
-    proposephase2(ProposalNumber, TargetAcceptors).
+    proposeprepare(ProposalNumber, TargetAcceptors, ResponsesCountdown, blank).
 
-proposephase2(ProposalNumber, TargetAcceptors) ->
-    io:format("pid ~p: got to propose phase 2 with prop num ~p, acceptors ~p~n", [self(), ProposalNumber, TargetAcceptors]).
+% wait for majority to respond
+proposeprepare(ProposalNumber, TargetAcceptors, ResponsesCountdown, Value) ->
+    if ResponsesCountdown =:= 0 -> proposecommit(ProposalNumber, TargetAcceptors, Value);
+       ResponsesCountdown =/= 0 ->
+           % need to check pids! make sure we're not receiving duplicate messages
+           receive 
+               % we get blank value back - use our value
+               {_, {promise, {_, blank}}} -> 
+                   proposeprepare(ProposalNumber, TargetAcceptors, ResponsesCountdown - 1, Value);
+               % we get an actual value back
+               {_, {promise, {PropNum, V}}} ->
+                   % right now, this doesn't check the PropNum ... 
+                   proposeprepare(ProposalNumber, TargetAcceptors, ResponsesCountdown - 1, V);
+               {_, {sorry}} -> 
+                   % abort proposal!
+                   io:format("pid ~p: aborting proposal~n", [self()])
+           end
+    end.
 
+proposecommit(PropNum, Acceptors, Value) ->
+                     %pick value here... needs to change
+    MyValue = if Value =:= blank -> random:uniform(2);
+                 Value =/= blank -> Value
+              end,
+    lists:foreach(fun (AccPid) -> AccPid ! {self(), {accept_request, {PropNum, MyValue}}} end, Acceptors),
+    io:format("proposer ~p: just finished, I think value is: ~p~n", [self(), MyValue]),
+    accept(PropNum, Value).
 
-accept() ->
-    io:format("I am an acceptor~n").
+accept(HighestPropNum, ValueAccepted) ->
+    receive
+        % prepare requests
+        {Pid, {prepare_request, ProposalNumber}} when HighestPropNum =< ProposalNumber ->
+            Pid ! {self(), {promise, {HighestPropNum, ValueAccepted}}},
+            accept(ProposalNumber, ValueAccepted);
+        {Pid, {prepare_request, _}} ->
+            Pid ! {self(), {sorry}},
+            accept(HighestPropNum, ValueAccepted);
+
+        % accept requests
+        {_, {accept_request, {Pnum, V}}} when HighestPropNum =< Pnum ->
+            accept(Pnum, V);
+        {Pid, {accept_request, _}} ->
+            Pid ! {self(), {sorry}},
+            accept(HighestPropNum, ValueAccepted)
+    end.
 
 getpropnum(Pid) ->
     {Pid, now()}.
