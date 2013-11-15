@@ -46,7 +46,7 @@ priest(PList) ->
 propose(PList) ->
     io:format("pid ~p: I'm going to propose~n", [self()]),
     NumPriests = length(PList) + 1,
-    ProposalNumber = getpropnum(self()),
+    ProposalNumber = getpropnum(),
     TargetAcceptors = getquorum(PList),
     ResponsesCountdown = NumPriests div 2 + NumPriests rem 2,
     lists:foreach(fun(AccPid) -> AccPid ! {self(), {prepare_request, ProposalNumber}} end, TargetAcceptors),
@@ -73,7 +73,7 @@ proposeprepare(ProposalNumber, TargetAcceptors, ResponsesCountdown, Value) ->
 
 proposecommit(PropNum, Acceptors, Value) ->
                      %pick value here... needs to change
-    MyValue = if Value =:= blank -> random:uniform(2);
+    MyValue = if Value =:= blank -> self();
                  Value =/= blank -> Value
               end,
     lists:foreach(fun (AccPid) -> AccPid ! {self(), {accept_request, {PropNum, MyValue}}} end, Acceptors),
@@ -92,14 +92,17 @@ accept(HighestPropNum, ValueAccepted) ->
 
         % accept requests
         {_, {accept_request, {Pnum, V}}} when HighestPropNum =< Pnum ->
+            io:format("acceptor ~p: I think value is ~p~n", [self(), V]),
             accept(Pnum, V);
         {Pid, {accept_request, _}} ->
             Pid ! {self(), {sorry}},
             accept(HighestPropNum, ValueAccepted)
     end.
 
-getpropnum(Pid) ->
-    {Pid, now()}.
+% comparison of records is lexicographic (like a dictionary)
+% we compare proposal numbers first by now(), then by the reference
+getpropnum() ->
+    {now(), make_ref()}.
 
 % just returns the entire list for now
 getquorum(PList) ->
