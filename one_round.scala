@@ -14,6 +14,14 @@ class Proposal(p: Int, proposer_name : String) {
       (this.propnum == that.propnum && this.proposer < that.proposer))
   }
 
+  def >(that: Proposal) : Boolean = {
+    return that < this
+  }
+
+  def >=(that: Proposal) : Boolean = {
+    return that <= this
+  }
+
   def <=(that: Proposal): Boolean = {
     return (this.propnum < that.propnum || 
       (this.propnum == that.propnum && this.proposer <= that.proposer))
@@ -46,7 +54,7 @@ class Server(n: String) extends Actor{
   val timeout = 500 //timeout for all messages
 
   var acceptedproposal = new Proposal(-1, name)
-  var biggestrecved = acceptedproposal // what type for values?
+  var biggestrecved = acceptedproposal
   var lastoffer = 0
 
 
@@ -73,11 +81,6 @@ class Server(n: String) extends Actor{
   }
 
   def proposerphase1() = {
-    // generate new proposal number
-    // get majority
-    // send messages, go to next phase
-    //val acceptors = 
-
     // can change this in future to include all servers, or whatever
     val quorum = majority(servers diff List(this), servers.length / 2 + 1)
     for (acceptor <- quorum) {
