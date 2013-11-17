@@ -39,15 +39,11 @@ class Proposal(p: Int, proposer_name : String) {
 class Server(n: String) extends Actor{
   var leader = "none"
   var servers = List[Server]()
-  var num = -1//track the highest current propose number in the network
-  var selfnum = -1//record the propose times 
-  var propose_msg_num = 0// record the number of majority msgs sent
-  var msg_box = List[(String, Int)]()// save all the reply of "prepare request", the proposer can then choose the highest num for value
-  var sent = 0//flag for proposer so that it will not propose multiple round
 
-  // my stuff
+  // my new stuff
   val rnumgen = new scala.util.Random
   val name = n
+  val timeout = 500 //timeout for all messages
 
   var acceptedproposal = new Proposal(-1, name)
   var biggestrecved = acceptedproposal // what type for values?
@@ -84,6 +80,9 @@ class Server(n: String) extends Actor{
 
     // can change this in future to include all servers, or whatever
     val quorum = majority(servers diff List(this), servers.length / 2 + 1)
+    for (acceptor <- quorum) {
+      Console.println("server "+name+": " + acceptor.name +" is in my quorum")
+    }
     val proposal = new Proposal(lastoffer + 1, name)
     for (s <- quorum ) {
       s ! ("prepare request", proposal)
@@ -114,7 +113,7 @@ class Server(n: String) extends Actor{
     }
     // still waiting...
     else {
-      receive {
+      receiveWithin(timeout) {
         case ("promise", prop : Proposal) =>
           if (receivedproposal < prop) {
             proposerphase2(quorum, unresponders diff List(sender), myproposal, prop)
@@ -131,6 +130,7 @@ class Server(n: String) extends Actor{
             // perhaps message came from an old proposal?
             proposerphase2(quorum, unresponders, myproposal, receivedproposal)
           }
+        case TIMEOUT => startround()
           // add case for other proposer's messages?
       }
     }
@@ -148,18 +148,19 @@ class Server(n: String) extends Actor{
 //      }
     }
     else {
-      receive {
+      receiveWithin(timeout) {
         case ("accepted", prop) if prop == proposal => proposerfinal(quorum, unresponders diff List(sender), proposal)
         // received acknowledgement from past proposal?
         case ("accepted", prop) => proposerfinal(quorum, unresponders, proposal) 
         case ("sorry", _) => startround()
+        case TIMEOUT => startround()
       }
     }
   }
 
   // I don't think we need to separate phases for acceptors
   def acceptor() : Unit = {
-    receive {
+    receiveWithin(timeout) {
       case ("prepare request", prop: Proposal) => 
         if (biggestrecved <= prop) {
           reply(("promise", acceptedproposal))
@@ -181,6 +182,7 @@ class Server(n: String) extends Actor{
           reply(("sorry", prop))
           acceptor()
         }
+      case TIMEOUT => startround()
     }
   }
 
@@ -201,71 +203,9 @@ class Server(n: String) extends Actor{
     startround()
   }
   def printleader(){
-    Console.println("I'm Server " + name + " I accept " + leader + " as my leader")
+    Console.println("I'm Server " + name + " I accept " + acceptedproposal.getValue + " as my leader")
   }
 }
-
-
-
-
-//    while(true){
-//      if(leader == "none" && sent==0){  
-//        // toss the coin to decide if I want to send a prepare request  
-//        val rand = new scala.util.Random           
-//        if(rand.nextInt(10) > 3){
-//          for(s <- (majority(servers,4) diff List(self))) { 
-//            Console.println("server "+name+" propose "+ "to sb with number "+ (selfnum+1))
-//            s ! ("prepare request", selfnum+1)  
-//            propose_msg_num = propose_msg_num +1            	
-//
-//          }//end for send propse to majority
-//          sent = 1
-//        }//end if propose
-//
-//      }//toss the coin and send msg to the majority
-//      receive {
-//        case ("prepare request", number:Int) =>
-//          if (leader == "none" && number > num){	
-//            num = number       
-//            sender ! ("reply prepare request", leader, num)
-//            Console.println("server "+name+" accept prepare request number"+ num)
-//      }
-//        case ("reply prepare request", leadername:String, number:Int)=>{
-//          if(propose_msg_num > 0){
-//            propose_msg_num = propose_msg_num -1
-//            msg_box = msg_box :+ (leadername, number)
-//
-//            if(propose_msg_num==0){
-//              msg_box = msg_box.sortBy(a=>a._2)
-//              leader = msg_box.last._1
-//              num = msg_box.last._2
-//              if(leader =="none")
-//                leader = name
-//              for(s <- (majority(servers,4) diff List(self))){
-//                s !("accept request", leader, num)
-//          }
-//          //clear
-//          msg_box = List[(String, Int)]()//clear msg_box
-//          sent = 0
-//          selfnum = num
-//
-//              }
-//            }
-//
-//
-//          }
-//        case ("accept request", leadername:String, number:Int)=>{
-//          if(leader == "none" && number>=num){
-//            leader  = leadername
-//            Console.println("server "+name+" accept " + leader +" as leader")
-//        }
-//          }
-
-
-
-//
-//        }
-      //}
 
 object election extends App{
   val  s1  = new Server("s1")
@@ -281,5 +221,10 @@ object election extends App{
 
   for(s <- servers){
     s.start
+  }
+
+  Thread.sleep(5000)
+  for (s <- servers) {
+    s.printleader()
   }
 }
