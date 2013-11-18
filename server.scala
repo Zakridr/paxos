@@ -1,48 +1,10 @@
+package paxos
+
 import scala.io.Source
 import scala.actors._
 import scala.actors.Actor._
 import scala.concurrent._
 
-class Proposal(p: Int, proposer_name : String) {
-  val propnum = p
-  val proposer = proposer_name
-
-  var value = "blank"
-
-  def <(that: Proposal): Boolean = {
-    return (this.propnum < that.propnum || 
-      (this.propnum == that.propnum && this.proposer < that.proposer))
-  }
-
-  def >(that: Proposal) : Boolean = {
-    return that < this
-  }
-
-  def >=(that: Proposal) : Boolean = {
-    return that <= this
-  }
-
-  def <=(that: Proposal): Boolean = {
-    return (this.propnum < that.propnum || 
-      (this.propnum == that.propnum && this.proposer <= that.proposer))
-  }
-
-  def ==(that: Proposal) : Boolean = {
-    return (this.propnum == that.propnum && this.proposer == that.proposer && this.value == that.value)
-  }
-
-  def setValue(v : String) = {
-    value = v
-  }
-
-  def getValue() : String = {
-    return value
-  }
-
-  def hasValue() : Boolean = {
-    return value != "blank"
-  }
-}
 
 class Server(n: String) extends Actor{
   var leader = "none"
@@ -201,7 +163,6 @@ class Server(n: String) extends Actor{
     }
   }
 
-
   def act(){
     startround()
   }
@@ -210,24 +171,3 @@ class Server(n: String) extends Actor{
   }
 }
 
-object election extends App{
-  val  s1  = new Server("s1")
-  val  s2  = new Server("s2")
-  val  s3  = new Server("s3")
-  val  s4  = new Server("s4")
-  val  s5  = new Server("s5")
-  //s1.printleader
-  val servers = List(s5,s2,s3,s4,s1)
-  for(s <- servers){
-    s.init_servers(servers)
-  }
-
-  for(s <- servers){
-    s.start
-  }
-
-  Thread.sleep(5000)
-  for (s <- servers) {
-    s.printleader()
-  }
-}
