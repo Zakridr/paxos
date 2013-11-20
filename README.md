@@ -1,9 +1,14 @@
-paxos
+
+sbt
 =====
-IMPORTANT:
 Download sbt.
 http://www.scala-sbt.org/
 
+To compile + run, just execute sbt in the project directory.
+Then in the sbt shell, type run. This should run the election class.
+
+paxos
+=====
 I separated out the classes into separate files to make things more manageable.
 I think we have a reasonable starting point now, I want to organize things a
 little before going on to do multi-paxos. So when I tried to run scalac, I had
