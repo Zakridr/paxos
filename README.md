@@ -16,8 +16,11 @@ stand-alone jar
 =====
 In the project directory, run sbt.
 Then type:
+
 reload
+
 compile
+
 assembly
 
 This produces a jar in the folder target/scala-2.10/
