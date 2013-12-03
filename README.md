@@ -12,6 +12,18 @@ organization
 All source files are in src/main/scala
 
 
+stand-alone jar
+=====
+In the project directory, run sbt.
+Then type:
+reload
+compile
+assembly
+
+This produces a jar in the folder target/scala-2.10/
+You can run the jar with "java -jar \<jarname\>"
+
+
 paxos
 =====
 Now I finished the multipaxos, For simplicity, there is no leader selection round and we
