@@ -1,0 +1,37 @@
+For the demo:
+
+It would be simplest to just do everything on one machine. We can use virtual
+machines. If we try to get the audience to download and run our program, we
+could run into networking issues (firewall, port number, etc.) during the
+presentation itself that can't be predicted.
+
+With VMs, we can model two failures cases without changing the code in any way.
+Pausing a vm represents a temporary failure - ie. a network connection goes
+down, and then comes back up.  Killing a vm represents a permanent failure. We
+could reboot the vm and restart the process, in which case we need to write
+data to disk in the code. I don't think this is super crucial, so we don't have
+to worry about it for now.
+
+To demonstrate, I was thinking of having a GUI on the host OS (i.e., running on
+the computer that runs the vms) that monitors the state of each replica. Since
+paxos is for implementing a replicated state machine, we have a lot of
+flexibility here as to what the state could be. Simple visual indicators could
+just be colours - client commands could be increase/decrease red,
+increase/decrease green, increase/decrease blue. So each replica stores the
+current colour, and when paxos achieves consensus for the next slot number, the
+servers perform the command, which is just transforming their local state. This
+is just an idea; we could do other things.
+
+The point is we need to make the client commands actually do something, though.
+We can think about them as transition functions, and the perform method of the
+Replica class just applies the transition function to the current state. So
+paxos will need some configuration information: what are the states and
+transition functions? These things should be opaque to the paxos code, though.
+Say clients need to implement a class or something, and then the replicas just
+use certain methods of this class.
+
+The GUI could have commands to change the state, or we could have a series of
+commands hardcoded. In any case, we should model clients as actor processes
+that send messages to replicas. If we do the GUI w/ commands built in, then we
+could just have one client, but there's no reason why the code shouldn't be
+able to handle multiple clients.
