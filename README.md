@@ -1,3 +1,14 @@
+multiple main classes
+=====
+I added a start at some GUI code. So the project now has multiple classes with main methods.
+So, in order to run your code, run sbt. In the sbt console, type:
+
+runMain multipaxos.multipaxos
+
+This will run the paxos stuff. To run the GUI, type:
+
+runMain clientinterface.PaxosInterface
+
 
 sbt
 =====
