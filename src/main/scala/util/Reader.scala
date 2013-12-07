@@ -22,15 +22,15 @@ class Bootstrapper(localnamesfile : String) {
                    = {
         val remotelines = Source.fromFile(allplayers).getLines().toList diff 
                           Source.fromFile(localplayers).getLines().toList
-        val listtuples = remotelines.map( l => l.split(',')).map( a => 
+        val listtuples = remotelines.map(_.split(',')).map( a => 
                 (a(0), 
                  a(1).trim.toInt,
                  Symbol(a(2).trim),
                  Symbol(a(3).trim)))
-        val servers = listtuples.filter(x => x._3 == 'Server)
-        val replicas = listtuples.filter(x => x._3 == 'Replica)
-        val acceptors = listtuples.filter(x => x._3 == 'Acceptor)
-        val leaders = listtuples.filter(x => x._3 == 'Leader)
+        val servers = listtuples.filter(_._3 == 'Server)
+        val replicas = listtuples.filter(_._3 == 'Replica)
+        val acceptors = listtuples.filter(_._3 == 'Acceptor)
+        val leaders = listtuples.filter(_._3 == 'Leader)
         return ( (servers, replicas, leaders, acceptors) )
     }
 }

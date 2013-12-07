@@ -5,12 +5,13 @@ import scala.actors.Actor._
 import scala.concurrent._
 import scala.util.control.Breaks._
 
-
+// argh, need to change the act method...
 class Server(sname: String, l_id:Int) extends Actor{
     val name = sname
     val leader_id = l_id
     val acceptor = new Acceptor(name, l_id)
     val replica = new Replica(name, l_id)
+
     var leader = new Leader(name, l_id)
     var servers = List[Server]()
 

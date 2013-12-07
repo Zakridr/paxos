@@ -11,6 +11,8 @@ object multipaxos extends App{
     val s2 = new Server("s2", 1)
     val s3 = new Server("s3", 1)
     val s4 = new Server("s4", 1)
+    val s5 = new Server("s5", 1)
+    
     val servers = List(s1,s2,s3,s4)
     for(s <- servers){
         s.init_servers(servers)
