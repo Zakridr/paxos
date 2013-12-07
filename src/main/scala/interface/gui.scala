@@ -1,7 +1,9 @@
 package clientinterface
 
+// swing junk
 import swing.event._
 import swing._
+import swing.Swing.onEDT
 import java.awt.{Color, Graphics2D, Point, geom, Dimension}
 
 object PaxosInterface extends SimpleSwingApplication {
@@ -9,18 +11,25 @@ object PaxosInterface extends SimpleSwingApplication {
   val cols = 4
 
   val colourDelta = 20
+  implicit val intermediator = new Intermediator()
 
   // buttons
-  val incrR = makeColourButton("increase red") 
-  val incrG = makeColourButton("increase green") 
-  val incrB = makeColourButton("increase blue") 
-  val decrR = makeColourButton("decrease red") 
-  val decrG = makeColourButton("decrease green") 
-  val decrB = makeColourButton("decrease blue") 
+  val incrR = makeColourButton("increase red", 'incR) 
+  val incrG = makeColourButton("increase green", 'incG) 
+  val incrB = makeColourButton("increase blue", 'incB) 
+  val decrR = makeColourButton("decrease red", 'decR) 
+  val decrG = makeColourButton("decrease green", 'decG) 
+  val decrB = makeColourButton("decrease blue", 'decB) 
 
-  def makeColourButton(label : String) = {
+  def makeColourButton(label : String, msg : Symbol) = {
     new Button {
       text = label
+
+      listenTo(this)
+      reactions += {
+        case ButtonClicked(b) => 
+          Send(msg)
+      }
     }
   }
 
@@ -40,9 +49,7 @@ object PaxosInterface extends SimpleSwingApplication {
       background = Color.white
       preferredSize = new Dimension(200,200)
 
-      // listenTo...
-      // for now, just the buttons?
-      listenTo(incrR, decrR)
+      listenTo(intermediator)
       override def paintComponent(g: Graphics2D) = {
         super.paintComponent(g)
         g.setColor(currColor)
@@ -51,11 +58,11 @@ object PaxosInterface extends SimpleSwingApplication {
         g.fillArc(widthOffset, heightOffset, this.size.width / 2, this.size.height / 2, 0, 360) 
       }
       reactions += {
-        case ButtonClicked(`incrR`) => currColor = new Color(currColor.getRed() + colourDelta,
+        case Receive('incR) => currColor = new Color(currColor.getRed() + colourDelta,
                                                             currColor.getGreen(),
                                                             currColor.getBlue())
                                        repaint()
-        case ButtonClicked(`decrR`) => currColor = new Color(currColor.getRed() - colourDelta,
+        case Receive('decR) => currColor = new Color(currColor.getRed() - colourDelta,
                                                             currColor.getGreen(),
                                                             currColor.getBlue())
                                        repaint()
