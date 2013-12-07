@@ -6,6 +6,24 @@ import swing._
 import swing.Swing.onEDT
 import java.awt.{Color, Graphics2D, Point, geom, Dimension}
 
+class Colour(red : Int, green : Int, blue : Int) extends Color(red : Int, green : Int, blue : Int) {
+  def bound(colval : Int) = {
+    if (colval > 255) 255 else if (colval < 0) 0 else colval
+  }
+
+  def changeRed(red : Int) = {
+    new Colour (bound(this.getRed + red), this.getGreen, this.getBlue)
+  }
+
+  def changeGreen(green : Int) = {
+    new Colour (this.getRed, bound(this.getGreen + green), this.getBlue)
+  }
+
+  def changeBlue(blue : Int) = {
+    new Colour (getRed, getGreen, bound(getBlue + blue))
+  }
+}
+
 object PaxosInterface extends SimpleSwingApplication {
   val rows = 3
   val cols = 4
@@ -19,7 +37,7 @@ object PaxosInterface extends SimpleSwingApplication {
   val incrB = makeColourButton("increase blue", 'incB) 
   val decrR = makeColourButton("decrease red", 'decR) 
   val decrG = makeColourButton("decrease green", 'decG) 
-  val decrB = makeColourButton("decrease blue", 'decB) 
+  val decrB = makeColourButton("decrease blue", 'decB)
 
   def makeColourButton(label : String, msg : Symbol) = {
     new Button {
@@ -44,28 +62,33 @@ object PaxosInterface extends SimpleSwingApplication {
   // to messages from the given server
   def makeServerDisplay(servername : String) = {
     new Panel {
-      var currColor = Color.black
+      var currColour = new Colour(0, 0, 0)
       var blah = "no button clicked"
-      background = Color.white
+      background = new Colour(255, 255, 255)
       preferredSize = new Dimension(200,200)
 
       listenTo(intermediator)
       override def paintComponent(g: Graphics2D) = {
         super.paintComponent(g)
-        g.setColor(currColor)
-        val widthOffset = this.size.width / 4
-        val heightOffset = this.size.height / 4
-        g.fillArc(widthOffset, heightOffset, this.size.width / 2, this.size.height / 2, 0, 360) 
+        g.setColor(currColour)
+        val minDim = if (size.width < size.height) size.width else size.height
+        // val widthOffset = this.size.width / 4
+        // val heightOffset = this.size.height / 4
+        g.fillArc(minDim / 4, minDim / 4, minDim / 2, minDim / 2, 0, 360) 
       }
       reactions += {
-        case Receive('incR) => currColor = new Color(currColor.getRed() + colourDelta,
-                                                            currColor.getGreen(),
-                                                            currColor.getBlue())
-                                       repaint()
-        case Receive('decR) => currColor = new Color(currColor.getRed() - colourDelta,
-                                                            currColor.getGreen(),
-                                                            currColor.getBlue())
-                                       repaint()
+        case Receive('incR) => currColour = currColour.changeRed(colourDelta)
+                               repaint()
+        case Receive('decR) => currColour = currColour.changeRed(-colourDelta)
+                               repaint()
+        case Receive('incG) => currColour = currColour.changeGreen(colourDelta)
+                               repaint()
+        case Receive('decG) => currColour = currColour.changeGreen(-colourDelta)
+                               repaint()
+        case Receive('incB) => currColour = currColour.changeBlue(colourDelta)
+                               repaint()
+        case Receive('decB) => currColour = currColour.changeBlue(-colourDelta)
+                               repaint()
       }
     }
   }
