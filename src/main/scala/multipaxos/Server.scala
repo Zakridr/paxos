@@ -31,23 +31,12 @@ class Server(sname: String, l_id:Int) extends Actor{
 
     def getReplicas():Replica={return replica}
 
-    def isLeader():Boolean = {
-        if(leaderServer().name==this.name) return true
-        return false
-    }
+    def isLeader():Boolean = leaderServer().name == name
 
-    def getReplicas(ss: List[Server]):List[Replica] = {
-        var replicas = List[Replica]()
-        ss.foreach{e=>{replicas :+= e.replica}}
-        return replicas
-    }
+    def getReplicas(ss: List[Server]):List[Replica] = ss.map( s => s.replica)
 
-     def getAcceptors(ss: List[Server]):List[Acceptor] = {
-        var acceptors = List[Acceptor]()
-        ss.foreach{e=>{acceptors :+= e.acceptor}}
-        return acceptors
-    }
-    
+    def getAcceptors(ss: List[Server]):List[Acceptor] = ss.map( s => s.acceptor)
+
     def act(){
         acceptor.start
         replica.start  
