@@ -11,7 +11,7 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
     val id = params.id
     val leaders = ls
 
-    var acceptor_b_num = new B_num(-1, -1)
+    var acceptor_b_num = new B_num(-1, Symbol("0"))
     var acceptor_accepted = new PvalueList()
 
     def prune(slot_num:Int) : PvalueList = {
@@ -35,13 +35,13 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
                 //prune the pvalues according to the slot_num
                 val pruned_accepted = prune(slot_num)
                 sender!("prepare reply", id, acceptor_b_num, pruned_accepted)
-                Console.println("As accecptor server: " + name + " reply prepare request with b_num:" + acceptor_b_num.toString())
+                Console.println("As accecptor server: " + id + " reply prepare request with b_num:" + acceptor_b_num.toString())
                 Console.println("And I attached my accepted pvalues:" )
                 pruned_accepted.print()
 
             }//end case
             case ("accept request", l_id: Symbol, p:Pvalue, commdr_id :Symbol) =>{
-                //println("server "+ name + " find a accept request match")
+                //println("server "+ id + " find a accept request match")
 
                 if(p.get_B_num() >= acceptor_b_num){
                     acceptor_b_num = p.get_B_num()
@@ -52,7 +52,7 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
                 // TODO
                 sender!("accept reply", this, acceptor_b_num)
                 //println("hello, hello, hello, I receive  accept request from " + sender)
-                //Console.println("As accecptor server: " + name + " reply accept request with b_num:" + acceptor_b_num.toString())
+                //Console.println("As accecptor server: " + id + " reply accept request with b_num:" + acceptor_b_num.toString())
             }// end case
         }//end receive
     }//end Acceptor_fun

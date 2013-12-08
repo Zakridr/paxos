@@ -23,10 +23,9 @@ class Server(bs : Bootstrapper)  extends Actor{
                               new ActorBag(remoteLeaders), 
                               localLeader.makeActorHandle)
     val leader = new Leader(localLeader,
+                            new ActorBag(remoteLeaders),
                             new ActorBag(localReplica :: remoteReplicas),
                             new ActorBag(localAcceptor :: remoteAcceptors))
-
-    def getAcceptor():Acceptor = return acceptor
 
     def act(){
         alive(port)
@@ -47,6 +46,5 @@ class Server(bs : Bootstrapper)  extends Actor{
             }
         }
     }
-
     def printArray()= replica.printArray()
 }
