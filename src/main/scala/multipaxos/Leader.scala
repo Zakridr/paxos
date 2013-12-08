@@ -3,23 +3,24 @@ import scala.io.Source
 import scala.actors._
 import scala.actors.Actor._
 import scala.concurrent._
-import scala.util.control.Breaks._
 
-
-
-class Leader(sname: String, l_id:Int) extends Actor{
+class Leader(sname: String) extends Actor{
     val name = sname
-    val leader_id = l_id
+    var leader_id = -1
+    var leaders = List[Leader]()
     var replicas = List[Replica]()
     var acceptors = List[Acceptor]()
-    var leader_b_num = new B_num(0, leader_id)
+    var leader_b_num = new B_num(0, -1)
     var active = false
     var leader_proposals = new ProposalList(List[Proposal]())
     //var scout_waitfor = servers diff List(this)
 
-    def init(initr: List[Replica], inita:List[Acceptor]) = {
+    def init(initr: List[Replica], inita:List[Acceptor], initl:List[Leader],l_id:Int) = {
       replicas = initr
       acceptors = inita
+      leaders = initl
+      leader_id = l_id
+      leader_b_num = new B_num(0,l_id)
       //scout_waitfor = servers diff List(this)
 
     }
@@ -30,125 +31,89 @@ class Leader(sname: String, l_id:Int) extends Actor{
     def getAcceptor(acceptor_id:Int):Acceptor={
         return acceptors(acceptor_id)
     }
+    def getLeader(l_id:Int):Leader={
+        return leaders(l_id)
+    }
 
     def Leaderfun(l_acceptors: List[Acceptor], l_replicas: List[Replica])={
         var acc = l_acceptors
         var rep = l_replicas
+
         
-        //while(true){
             receive{
                 case (ss:Replica, "propose", p: Proposal)=>{
-                    Console.println("As leader server: " + name + " I receive a proposal:" + p.toString + " from Replica" + ss.name)
+                    //Console.println("As leader server: " + name + " I receive a proposal:" + p.toString + " from Replica" + ss.name)
                     if(!leader_proposals.exist_cmd(p.command)){
-                        println("I put the request into my propsal and active is:" + active)
+                        //println("I put the request into my propsal and active is:" + active)
                         leader_proposals.put(p)
-                        if(active){var returnB = Commander(this, acc, rep, new Pvalue(leader_b_num, p.s_num, p.command))}
+                        if(active){  
+                            new Leader_Commander(this, acc, rep, new Pvalue(leader_b_num, p.s_num, p.command)).start                 
+                            
+                        }
                     }//end if
                 }//end case
 
                 case ("adopted", b: B_num, pvals:PvalueList) =>{
                     leader_proposals = leader_proposals.Xor(pvals.Pmax())
-                    Console.println("As leader server: " + name + " I got adoptted and here is my proposals to be command:")
+                    //Console.println("As leader server: " + name + " I got adoptted")
+                    Console.println("As leader server: " + name + " I got adoptted and here is my proposals to be command: ")
                     leader_proposals.print()
+
                     for(e <- leader_proposals.prlist){
-                        var returnB = Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command))
-                        println("ok, returned from function command")
+                        new Leader_Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command)).start
+                        
+                        //println("ok, returned from function command")
 
                     }// end for
                     active = true
                 }//end case
                 case ("Sorry", b1: B_num) => {
-                    if(b1 > leader_b_num){
+                    if(b1 > leader_b_num && active ){
+                        val active_leader = getLeader(b1.getLeader())
+                        println("I'm leader " + name +" I got preempt msg and start to ping active leader " + active_leader.name)
                         active = false
-                        leader_b_num = new B_num(leader_b_num.b_num+1, leader_id)
-                        //scout_waitfor = acc diff List(this)
-                        var returnA = Scout(this, acc, leader_b_num)
-                        Console.println("As leader server: " + name + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
+                        //now I start ping the current active leader until it is unavailable
+                        
+                        new ping(this, active_leader, 300).start
+
                     }
 
                 }
+                case ("scout")=>{
+                    if(!active){
+                        leader_b_num = new B_num(leader_b_num.b_num+1, leader_id)
+                        val ss_num= replicas(leader_id).slot_num
+                        new Leader_Scout(this, acc, leader_b_num,ss_num).start
+                        Console.println("As leader server: " + name + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
+
+                    }
+
+                }
+                case ("ping!", x:Leader) =>{
+                    if(active){
+                        println("I'm active leader "+ name +" I send alive msg to leader "+ x.name)
+                        x!("alive!")
+                    }
+
+                }
+                //to simulate the case when the active leader died
+                case ("exit!")=>{                  
+                    exit()
+                }
+
             }//end receive
 
-        //}//end while
+        
 
-    }
+    }//end Leaderfun
 
-    //leader function scout
-    def Scout(l:Leader, l_acceptors:List[Acceptor], b:B_num):Boolean={
-        var acc = l_acceptors 
-        var scout_waitfor = acc
-        var pvalues = new PvalueList()
-        for(s <- acc){
-            s!("prepare request", this, b)
-            Console.println("As leader server: " + name + " I send prepare request to acceptor: " + s.name +" with b_num:"+b.toString())
-        }
-        while(true){
-            receive{
-                case ("prepare reply", s:Acceptor, b1:B_num, r:PvalueList) =>{
-                    Console.println("As leader server: " + name + " I got repare request from" + s.name+ " with its accepted pvaluelist:")
-                    r.print()
-                    if(b.equal(b1)){
-                        pvalues.putList(r)
-                        scout_waitfor = scout_waitfor diff List(s)
-                        println("now waitfor length is: "+ scout_waitfor.length + " acceptors length/2 is: "+ acc.length/2)
-                        if(scout_waitfor.length < (acc.length/2)){
-                            println("I'm leader, in Scout, I send adopted")
-                            l!("adopted", b, pvalues)
-                            return true
-                        }
-                    }
-                    else{
-                        l!("Sorry", b1)
-                        return true
-                    }
-                }//end case
-            }//end receive
-        }// end while
-           return true
-
-
-    }//end Scout
 
    
-
-    def Commander(l:Leader, l_acceptors:List[Acceptor], l_replicas:List[Replica], pv:Pvalue):Boolean={
-        var waitfor = l_acceptors 
-        var acc = l_acceptors
-        var rep = l_replicas 
-        for(s <- acc){
-            s!("accept request", this, pv)
-            Console.println("As leader server: " + name + " in command I send accept reuest to " + s.name +" with pvalue:"+pv.toString())
-        }
-       while(true){
-            receive{
-                case ("accept reply", s:Acceptor, b:B_num) => {
-                    println("I'm leader, I got one accept reply from acceptors: "+s.name)
-                    if(b.equal(pv.get_B_num())){
-                        waitfor = waitfor diff List(s)
-                        println("commander's waitfor length: "+ waitfor.length)
-                        if(waitfor.length < (acc.length/2)){
-                            for(e <- rep){
-                                e!("decision", new Proposal(pv.s_num, pv.command))
-                                println("I'm leader, I send decision to server: " + e.name)
-                            }
-                            return true
-                        
-                        }//end if
-                    }
-                    else{
-                        l!("Sorry", b)
-                         return true
-                        
-                    }
-                }//end case
-            }//end receive
-        }//end while
-        return true
-
-    }//end commander
-
+   
     def act(){
-        var returnA= Scout(this, acceptors, leader_b_num)
+        //share the slot_num from its co-located replica
+        val ss_num= replicas(leader_id).slot_num
+        new Leader_Scout(this, acceptors, leader_b_num, ss_num).start
         while(true){
              Leaderfun(acceptors, replicas)
         }
@@ -157,3 +122,25 @@ class Leader(sname: String, l_id:Int) extends Actor{
    
 
 }
+
+
+// this actor(thread) send synchronize msg to the active leader, if no response within mils seconds,scout and exit
+class ping(me:Leader, active_leader:Leader, mils: Int) extends Actor{
+    def act(){
+        while(true){
+            val result = active_leader !?(mils, ("ping!", me))
+            println("I'm leader " + me.name +" I got ping result: " + result)
+            if(result== None){
+                println("I'm leader "+me.name+" I should scout")
+                me!("scout")
+                exit()
+
+            }
+        }
+    }
+
+}
+
+
+
+

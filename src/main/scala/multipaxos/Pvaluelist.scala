@@ -19,8 +19,15 @@ class PvalueList(){
         pvlist.foreach{e => {if(e.equal(p)) return true}}
         return false
     }
-    def putList(l:PvalueList){
+    def putList(l:PvalueList)={
         l.pvlist.foreach{e => put(e)}
+    }
+
+    def filter_By_s_num(ss_num:Int):PvalueList={
+        var result = new PvalueList();
+        pvlist.foreach{e=> {if(e.s_num>=ss_num) result.put(e)}}
+        return result
+
     }
 
 

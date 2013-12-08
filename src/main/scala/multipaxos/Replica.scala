@@ -3,24 +3,23 @@ import scala.io.Source
 import scala.actors._
 import scala.actors.Actor._
 import scala.concurrent._
-import scala.util.control.Breaks._
 
 
-class Replica(sname: String, l_id:Int) extends Actor{
+
+class Replica(sname: String) extends Actor{
     val name = sname
-    var leader_id = l_id
     var servers = List[Server]()
+    var leaders = List[Leader]()
     var array_content = new Array[String](100)
     var state = -1
     var slot_num = 0
     var replicas_proposals = new ProposalList(List[Proposal]()) // empty initially
     var replicas_decisions = new ProposalList(List[Proposal]())//empty initially
 
-    def leader():Leader = {
-        return servers(leader_id).leader
-    }
-    def init(inits: List[Server])={
+
+    def init(inits: List[Server],initl:List[Leader])={
         servers = inits
+        leaders = initl
 
     }
 
@@ -41,8 +40,8 @@ class Replica(sname: String, l_id:Int) extends Actor{
             val s_min = min_s_num(replicas_decisions.s_set, replicas_proposals.s_set)
             val temp_p = new Proposal(s_min, c)
             replicas_proposals.put(temp_p)
-            leader() ! (this, "propose", temp_p)
-            Console.println("as server "+this.name + " propose to leader with proposal: " + temp_p.toString)
+            leaders.foreach(l=> l ! (this, "propose", temp_p))
+            Console.println("as replica server "+this.name + " propose to leaders with proposal: " + temp_p.toString)
         }
     }
 
@@ -52,33 +51,36 @@ class Replica(sname: String, l_id:Int) extends Actor{
         if(replicas_decisions.exist_cmd(c) && replicas_decisions.getBy_cmd(c).head.s_num < slot_num){
             slot_num += 1
         }else{
-            array_content(slot_num) = c.getOp()
-            state += 1
-            slot_num += 1
-            Console.println("As server "+this.name + " update array_content(" + (slot_num-1) +") = " + c.getOp())
+            this.synchronized {
+                array_content(slot_num) = c.getOp()
+                state += 1
+                slot_num += 1
+            }
+            //Console.println("As replica server "+this.name + " update array_content(" + (slot_num-1) +") = " + c.getOp())
             //TODO 
             //send response to client
        }
 
     }
-
+    
+    
 
     def Replica_fun(){
         receive{
             case ("request", c: Command) => {
                     propose(c)
-                    Console.println("As replica server: " + name + " I got request" + c.toString())
+                    //Console.println("As replica server: " + name + " I got request" + c.toString())
                 }
             case ("decision", p: Proposal) =>{
-
-                Console.println("As replica server: " + name + " I got decision" + p.toString())
+               
+                //Console.println("As replica server: " + name + " I got decision" + p.toString())
                 replicas_decisions.put(p)
                 while(replicas_decisions.exist_s(slot_num)){
                     val temp1 = replicas_decisions.getBy_s(slot_num).head
                     if(replicas_proposals.exist_s(slot_num)){
                         val temp2 = replicas_proposals.getBy_s(slot_num).head
                         if(!temp1.equal(temp2)){
-                            Console.println("As replica server: " + name + " I found the a decision took slot" + slot_num+"and repropose"+temp2.toString())
+                            Console.println("As replica server: " + name + " I found the a decision took slot" + slot_num+" and repropose"+temp2.toString())
                                  //I add this line so that the replicas proposal size is reasonable
                             replicas_proposals.remove(temp2)
                             propose(temp2.command)
@@ -87,7 +89,7 @@ class Replica(sname: String, l_id:Int) extends Actor{
                         }
                     }
                     perform(temp1.command)
-                    Console.println("As replica server: " + name + " perform decision" + p.toString())
+                    //Console.println("As replica server: " + name + " perform decision" + p.toString())
 
                 }//end while
 

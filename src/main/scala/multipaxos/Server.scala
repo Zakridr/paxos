@@ -3,38 +3,37 @@ import scala.io.Source
 import scala.actors._
 import scala.actors.Actor._
 import scala.concurrent._
-import scala.util.control.Breaks._
 
 
-class Server(sname: String, l_id:Int) extends Actor{
+class Server(sname: String) extends Actor{
     val name = sname
-    val leader_id = l_id
-    val acceptor = new Acceptor(name, l_id)
-    val replica = new Replica(name, l_id)
-    var leader = new Leader(name, l_id)
+    var id = -1
+    val acceptor = new Acceptor(name)
+    val replica = new Replica(name)
+    val leader = new Leader(name)
     var servers = List[Server]()
 
     def init_servers(inits: List[Server]) = {
       servers = inits
+      id = getId(servers)
       acceptor.init(servers)
-      replica.init(servers)
-      if(isLeader) {
-        leader.init(getReplicas(servers), getAcceptors(servers))
-      }
+      replica.init(servers,getLeaders(servers))
+      leader.init(getReplicas(servers), getAcceptors(servers), getLeaders(servers),id)
 
     }
-    def leaderServer():Server = {
-        return servers(leader_id)
+ 
+  
+    def getId(ss:List[Server]):Int={
+        return ss.indexOf(this)
+
     }
 
-    def getAcceptor():Acceptor={ return acceptor}
-
-    def getReplicas():Replica={return replica}
-
-    def isLeader():Boolean = {
-        if(leaderServer().name==this.name) return true
-        return false
+    def getLeaders(ss: List[Server]):List[Leader] = {
+        var leaders = List[Leader]()
+        ss.foreach{e=>{leaders :+= e.leader}}
+        return leaders
     }
+
 
     def getReplicas(ss: List[Server]):List[Replica] = {
         var replicas = List[Replica]()
@@ -51,13 +50,14 @@ class Server(sname: String, l_id:Int) extends Actor{
     def act(){
         acceptor.start
         replica.start  
-        if(isLeader()){leader.start}
+        leader.start
             
         while(true){
             receive{
                 case ("request", c: Command) => {
                     replica !("request", c)
                 }
+                
             }
         }
 
