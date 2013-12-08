@@ -1,6 +1,6 @@
 package multipaxos
 
-class Command(client_id: Int, command_id : Int, operation: String) {
+class Command(client_id: Int, command_id : Int, operation: String) extends Serializable {
     // cid and cmid together uniquely decide the command
     val cid = client_id
     val cmid = command_id

@@ -1,53 +1,39 @@
 package multipaxos
-import scala.io.Source
+
 import scala.actors._
 import scala.actors.Actor._
-import scala.concurrent._
+import scala.actors.remote.RemoteActor.{alive, register}
 
+import paxutil._
 
-class Server(sname: String) extends Actor{
-    val name = sname
-    var id = -1
-    val acceptor = new Acceptor(name)
-    val replica = new Replica(name)
-    val leader = new Leader(name)
-    var servers = List[Server]()
+class Server(bs : Bootstrapper)  extends Actor{
+    val port = bs.getParams4Local._1.head.port
+    val id = bs.getParams4Local._1.head.id
 
-    def init_servers(inits: List[Server]) = {
-      servers = inits
-      id = getId(servers)
-      acceptor.init(servers)
-      replica.init(servers,getLeaders(servers))
-      leader.init(getReplicas(servers), getAcceptors(servers), getLeaders(servers),id)
+    val localAcceptor = bs.getParams4Local._4.head
+    val remoteAcceptors = bs.getParams4Remotes._4
+    val localLeader = bs.getParams4Local._3.head
+    val remoteLeaders = bs.getParams4Remotes._3
+    val localReplica = bs.getParams4Local._2.head
+    val remoteReplicas = bs.getParams4Remotes._2
 
-    }
- 
-  
-    def getId(ss:List[Server]):Int={
-        return ss.indexOf(this)
+                 // I don't think the acceptors need to know who the prime leader is...
+    val acceptor = new Acceptor(localAcceptor, new ActorBag(localLeader :: remoteLeaders))
+    val replica = new Replica(localReplica, 
+                              new ActorBag(remoteLeaders), 
+                              localLeader.makeActorHandle)
+    val leader = new Leader(localLeader,
+                            new ActorBag(localReplica :: remoteReplicas),
+                            new ActorBag(localAcceptor :: remoteAcceptors))
 
-    }
+    def getAcceptor():Acceptor = return acceptor
 
-    def getLeaders(ss: List[Server]):List[Leader] = {
-        var leaders = List[Leader]()
-        ss.foreach{e=>{leaders :+= e.leader}}
-        return leaders
-    }
-
-
-    def getReplicas(ss: List[Server]):List[Replica] = {
-        var replicas = List[Replica]()
-        ss.foreach{e=>{replicas :+= e.replica}}
-        return replicas
-    }
-
-     def getAcceptors(ss: List[Server]):List[Acceptor] = {
-        var acceptors = List[Acceptor]()
-        ss.foreach{e=>{acceptors :+= e.acceptor}}
-        return acceptors
-    }
-    
     def act(){
+        alive(port)
+        register(id, self)
+
+        //println("Server " + id + " has " + (localReplica :: remoteReplicas).length + " replicas")
+
         acceptor.start
         replica.start  
         leader.start
@@ -60,12 +46,7 @@ class Server(sname: String) extends Actor{
                 
             }
         }
-
     }
 
-     def printArray()={
-        replica.printArray()
-
-    }
-
-    }
+    def printArray()= replica.printArray()
+}
