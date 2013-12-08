@@ -3,12 +3,12 @@ import scala.actors._
 import scala.actors.Actor._
 import scala.actors.remote.RemoteActor.{alive, register}
 
-import paxutil.ActorData
+import paxutil._
 
-class Replica(pLeader : ActorData, params : ActorData, rLeaders : List[AbstractActor], lLeader : AbstractActor) extends Actor{
+class Replica(pLeader : ActorData, params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor) extends Actor{
     val localLeader = lLeader
     val remoteLeaders = rLeaders
-    val primeLeader = pLeader.makeRemoteActor
+    val primeLeader = pLeader.makeActorHandle
     val port = params.port
     val id = params.id
 
@@ -35,8 +35,7 @@ class Replica(pLeader : ActorData, params : ActorData, rLeaders : List[AbstractA
             val s_min = min_s_num(replicas_decisions.s_set, replicas_proposals.s_set)
             val temp_p = new Proposal(s_min, c)
             replicas_proposals.put(temp_p)
-            // TODO, sending an actor...
-            primeLeader ! (this, "propose", temp_p)
+            primeLeader ! (id, "propose", temp_p)
             println("As server " + id + " propose to leader with proposal: " + temp_p.toString)
         }
     }
@@ -62,7 +61,7 @@ class Replica(pLeader : ActorData, params : ActorData, rLeaders : List[AbstractA
         receive{
             case ("request", c: Command) => {
                     propose(c)
-                    println("As replica server: " + id + " I got request" + c.toString())
+                    //println("As replica server: " + id + " I got request" + c.toString())
                 }
             case ("decision", p: Proposal) =>{
 
@@ -96,7 +95,6 @@ class Replica(pLeader : ActorData, params : ActorData, rLeaders : List[AbstractA
             print(array_content(i) + " ")
         }
         println()
-
     }
 
     def act(){
@@ -107,10 +105,5 @@ class Replica(pLeader : ActorData, params : ActorData, rLeaders : List[AbstractA
             Replica_fun()
             
         }//end while
-
     }//end act
-
-
-
-
 }

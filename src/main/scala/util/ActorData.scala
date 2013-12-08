@@ -8,5 +8,5 @@ class ActorData(h: String, p: Int, i : Symbol) {
     val port = p
     val id  = i
 
-    def makeRemoteActor() = select(Node(host, port), id)
+    def makeActorHandle() = select(Node(host, port), id)
 }

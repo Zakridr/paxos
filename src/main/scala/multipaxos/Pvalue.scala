@@ -1,7 +1,7 @@
 package multipaxos
 
 // leader receive request from replicas and encapsulated it with Pvalue, send Pvalue in "accept request" to acceptors
-class Pvalue(b: B_num, slot : Int, c: Command) {
+class Pvalue(b: B_num, slot : Int, c: Command) extends Serializable {
     val b_num = b
     val s_num = slot // slot number
     val command = c

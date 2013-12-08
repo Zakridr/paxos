@@ -10,8 +10,9 @@ import paxutil.Bootstrapper
 object multipaxos extends App{
     val bstraps = List("local1.csv", "local2.csv", "local3.csv", "local4.csv", "local5.csv").map(fname => new Bootstrapper(fname))
 
+    //bstraps.foreach(_.getParams4Remotes._2.foreach(ad => println("data is: " + ad.host + " " + ad.port+ " " + ad.id)))
+    //bstrp1.getParams4Remotes._2.foreach(ad => println("data is: " + ad.host + " " + ad.port+ " " + ad.id))
     val primeLeader = bstraps.head.getParams4Local._3.head
-    println(primeLeader.id)
 
     val servers = bstraps.map(bs => new Server(primeLeader, bs))
 

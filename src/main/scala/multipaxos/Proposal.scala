@@ -2,7 +2,7 @@ package multipaxos
 
 
 // Proposal is the tuple (slot_num, command)
-class Proposal(slot:Int, c: Command){
+class Proposal(slot:Int, c: Command) extends Serializable {
     val s_num = slot
     val command = c
 

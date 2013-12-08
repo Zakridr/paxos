@@ -1,7 +1,7 @@
 package multipaxos
 
 // a list of Pvalue, acceptors will have a copy of it
-class PvalueList(){
+class PvalueList() extends Serializable {
     var pvlist = List[Pvalue]()
 
     def size():Int = {return pvlist.length}

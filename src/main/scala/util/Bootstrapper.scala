@@ -43,7 +43,6 @@ class Bootstrapper(localnamesfile : String) {
         processReadList(localdata)
 }
 
-/*
 // test code for reader class
 object Test extends App {
     val bstrp1 = new Bootstrapper("local1.csv")
@@ -51,6 +50,12 @@ object Test extends App {
     val bstrp3 = new Bootstrapper("local3.csv")
     val bstrp4 = new Bootstrapper("local4.csv")
     val bstrp5 = new Bootstrapper("local5.csv")
+    bstrp1.getParams4Remotes._2.foreach(ad => println("data is: " + ad.host + " " + ad.port+ " " + ad.id))
+    bstrp2.getParams4Remotes._2.foreach(ad => println("data is: " + ad.host + " " + ad.port+ " " + ad.id))
+    bstrp3.getParams4Remotes._2.foreach(ad => println("data is: " + ad.host + " " + ad.port+ " " + ad.id))
+    bstrp4.getParams4Remotes._2.foreach(ad => println("data is: " + ad.host + " " + ad.port+ " " + ad.id))
+    bstrp5.getParams4Remotes._2.foreach(ad => println("data is: " + ad.host + " " + ad.port+ " " + ad.id))
+    /*
     println(bstrp1.getParams4Remotes())
     println("")
     println(bstrp2.getParams4Remotes())
@@ -61,5 +66,5 @@ object Test extends App {
     println("")
     println(bstrp5.getParams4Remotes())
     println("")
+    */
 }
-*/

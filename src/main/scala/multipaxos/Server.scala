@@ -4,9 +4,7 @@ import scala.actors._
 import scala.actors.Actor._
 import scala.actors.remote.RemoteActor.{alive, register}
 
-import paxutil.ActorData
-import paxutil.Bootstrapper
-
+import paxutil._
 
 class Server(primeLeader : ActorData, bs : Bootstrapper)  extends Actor{
     val port = bs.getParams4Local._1.head.port
@@ -17,15 +15,18 @@ class Server(primeLeader : ActorData, bs : Bootstrapper)  extends Actor{
     val localLeader = bs.getParams4Local._3.head
     val remoteLeaders = bs.getParams4Remotes._3
     val localReplica = bs.getParams4Local._2.head
-    val remoteReplicas = bs.getParams4Local._2
+    val remoteReplicas = bs.getParams4Remotes._2
 
                  // I don't think the acceptors need to know who the prime leader is...
-    val acceptor = new Acceptor(primeLeader, localAcceptor)
-    val replica = new Replica(primeLeader, localReplica, remoteLeaders.map(_.makeRemoteActor), localLeader.makeRemoteActor)
+    val acceptor = new Acceptor(primeLeader, localAcceptor, new ActorBag(localLeader :: remoteLeaders))
+    val replica = new Replica(primeLeader, 
+                              localReplica, 
+                              new ActorBag(remoteLeaders), 
+                              localLeader.makeActorHandle)
     val leader = new Leader(primeLeader,
                             localLeader,
-                            (localReplica :: remoteReplicas).map(_.makeRemoteActor),
-                            (localAcceptor :: remoteAcceptors).map(_.makeRemoteActor))
+                            new ActorBag(localReplica :: remoteReplicas),
+                            new ActorBag(localAcceptor :: remoteAcceptors))
 
     def getAcceptor():Acceptor={ return acceptor}
 
@@ -41,9 +42,11 @@ class Server(primeLeader : ActorData, bs : Bootstrapper)  extends Actor{
         alive(port)
         register(id, self)
 
+        //println("Server " + id + " has " + (localReplica :: remoteReplicas).length + " replicas")
+
         acceptor.start
         replica.start  
-        if(isLeader()){leader.start}
+        if(isLeader()) {leader.start}
             
         while(true){
             receive{
