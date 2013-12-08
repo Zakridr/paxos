@@ -1,4 +1,4 @@
-package util
+package paxutil
 
 import scala.io.Source
 
@@ -9,34 +9,42 @@ import scala.io.Source
  * actor name - Symbol 
  */
 
+
 class Bootstrapper(localnamesfile : String) {
     val allplayers = "allnodes.csv"
     val localplayers = localnamesfile
 
+    val localdata = Source.fromFile(localplayers).getLines().toList
+    val alldata = Source.fromFile(allplayers).getLines().toList
+
     // return value looks like:
     // (list of servers, list of replicas, list of leaders, list of acceptors)
-    def getParams4Remotes() :  (List[(String, Int, Symbol, Symbol)],
-                   List[(String, Int, Symbol, Symbol)],
-                   List[(String, Int, Symbol, Symbol)],
-                   List[(String, Int, Symbol, Symbol)])
+    def processReadList(inputList : List[String]) :  
+                  (List[ActorData],
+                   List[ActorData],
+                   List[ActorData],
+                   List[ActorData])
                    = {
-        val remotelines = Source.fromFile(allplayers).getLines().toList diff 
-                          Source.fromFile(localplayers).getLines().toList
-        val listtuples = remotelines.map(_.split(',')).map( a => 
+        val listtuples = inputList.map(_.split(',')).map( a => 
                 (a(0), 
                  a(1).trim.toInt,
                  Symbol(a(2).trim),
                  Symbol(a(3).trim)))
-        val servers = listtuples.filter(_._3 == 'Server)
-        val replicas = listtuples.filter(_._3 == 'Replica)
-        val acceptors = listtuples.filter(_._3 == 'Acceptor)
-        val leaders = listtuples.filter(_._3 == 'Leader)
+        val servers = listtuples.filter(_._3 == 'Server).map(tup => new ActorData(tup._1, tup._2, tup._4))
+        val replicas = listtuples.filter(_._3 == 'Replica).map(tup => new ActorData(tup._1, tup._2, tup._4))
+        val acceptors = listtuples.filter(_._3 == 'Acceptor).map(tup => new ActorData(tup._1, tup._2, tup._4))
+        val leaders = listtuples.filter(_._3 == 'Leader).map(tup => new ActorData(tup._1, tup._2, tup._4))
         return ( (servers, replicas, leaders, acceptors) )
     }
+
+    def getParams4Remotes() = 
+        processReadList(alldata diff localdata)
+    def getParams4Local() = 
+        processReadList(localdata)
 }
 
-// test code for reader class
 /*
+// test code for reader class
 object Test extends App {
     val bstrp1 = new Bootstrapper("local1.csv")
     val bstrp2 = new Bootstrapper("local2.csv")

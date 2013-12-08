@@ -1,44 +1,31 @@
 package multipaxos
-import scala.io.Source
 import scala.actors._
 import scala.actors.Actor._
-import scala.concurrent._
-import scala.util.control.Breaks._
+import scala.actors.remote.RemoteActor.{alive, register}
+
+import paxutil.ActorData
 
 
+class Leader(pLeader : ActorData, params : ActorData, rs : List[AbstractActor], as : List[AbstractActor])  extends Actor{
+    val leader_id = pLeader.id
+    val replicas = rs
+    val acceptors = as
+    val port = params.port
+    val id = params.id
 
-class Leader(sname: String, l_id:Int) extends Actor{
-    val name = sname
-    val leader_id = l_id
-    var replicas = List[Replica]()
-    var acceptors = List[Acceptor]()
     var leader_b_num = new B_num(0, leader_id)
     var active = false
     var leader_proposals = new ProposalList(List[Proposal]())
     //var scout_waitfor = servers diff List(this)
 
-    def init(initr: List[Replica], inita:List[Acceptor]) = {
-      replicas = initr
-      acceptors = inita
-      //scout_waitfor = servers diff List(this)
-
-    }
-
-    def getReplica(replica_id:Int):Replica={
-        return replicas(replica_id)
-    }
-    def getAcceptor(acceptor_id:Int):Acceptor={
-        return acceptors(acceptor_id)
-    }
-
-    def Leaderfun(l_acceptors: List[Acceptor], l_replicas: List[Replica])={
+    def Leaderfun(l_acceptors: List[AbstractActor], l_replicas: List[AbstractActor])={
         var acc = l_acceptors
         var rep = l_replicas
         
         //while(true){
             receive{
                 case (ss:Replica, "propose", p: Proposal)=>{
-                    Console.println("As leader server: " + name + " I receive a proposal:" + p.toString + " from Replica" + ss.name)
+                    println("As leader server: " + id + " I receive a proposal:" + p.toString + " from Replica" + ss.id)
                     if(!leader_proposals.exist_cmd(p.command)){
                         println("I put the request into my propsal and active is:" + active)
                         leader_proposals.put(p)
@@ -48,7 +35,7 @@ class Leader(sname: String, l_id:Int) extends Actor{
 
                 case ("adopted", b: B_num, pvals:PvalueList) =>{
                     leader_proposals = leader_proposals.Xor(pvals.Pmax())
-                    Console.println("As leader server: " + name + " I got adoptted and here is my proposals to be command:")
+                    println("As leader server: " + id + " I got adoptted and here is my proposals to be command:")
                     leader_proposals.print()
                     for(e <- leader_proposals.prlist){
                         var returnB = Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command))
@@ -63,7 +50,7 @@ class Leader(sname: String, l_id:Int) extends Actor{
                         leader_b_num = new B_num(leader_b_num.b_num+1, leader_id)
                         //scout_waitfor = acc diff List(this)
                         var returnA = Scout(this, acc, leader_b_num)
-                        Console.println("As leader server: " + name + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
+                        println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
                     }
 
                 }
@@ -74,18 +61,18 @@ class Leader(sname: String, l_id:Int) extends Actor{
     }
 
     //leader function scout
-    def Scout(l:Leader, l_acceptors:List[Acceptor], b:B_num):Boolean={
+    def Scout(l:Leader, l_acceptors:List[AbstractActor], b:B_num):Boolean={
         var acc = l_acceptors 
         var scout_waitfor = acc
         var pvalues = new PvalueList()
         for(s <- acc){
             s!("prepare request", this, b)
-            Console.println("As leader server: " + name + " I send prepare request to acceptor: " + s.name +" with b_num:"+b.toString())
+            println("As leader server: " + id + " I send prepare request to acceptor: " + s ) // +" with b_num:"+b.toString())
         }
         while(true){
             receive{
                 case ("prepare reply", s:Acceptor, b1:B_num, r:PvalueList) =>{
-                    Console.println("As leader server: " + name + " I got repare request from" + s.name+ " with its accepted pvaluelist:")
+                    println("As leader server: " + id + " I got repare request from" + s + " with its accepted pvaluelist:")
                     r.print()
                     if(b.equal(b1)){
                         pvalues.putList(r)
@@ -111,25 +98,26 @@ class Leader(sname: String, l_id:Int) extends Actor{
 
    
 
-    def Commander(l:Leader, l_acceptors:List[Acceptor], l_replicas:List[Replica], pv:Pvalue):Boolean={
+    def Commander(l:Leader, l_acceptors:List[AbstractActor], l_replicas:List[AbstractActor], pv:Pvalue):Boolean={
         var waitfor = l_acceptors 
         var acc = l_acceptors
         var rep = l_replicas 
         for(s <- acc){
+            // TODO sending an actor
             s!("accept request", this, pv)
-            Console.println("As leader server: " + name + " in command I send accept reuest to " + s.name +" with pvalue:"+pv.toString())
+            println("As leader server: " + id + " in command I send accept reuest to " + s +" with pvalue:"+pv.toString())
         }
        while(true){
             receive{
                 case ("accept reply", s:Acceptor, b:B_num) => {
-                    println("I'm leader, I got one accept reply from acceptors: "+s.name)
+                    println("I'm leader, I got one accept reply from acceptors: "+s.id)
                     if(b.equal(pv.get_B_num())){
                         waitfor = waitfor diff List(s)
                         println("commander's waitfor length: "+ waitfor.length)
                         if(waitfor.length < (acc.length/2)){
                             for(e <- rep){
                                 e!("decision", new Proposal(pv.s_num, pv.command))
-                                println("I'm leader, I send decision to server: " + e.name)
+                                println("I'm leader, I send decision to server: " + e)
                             }
                             return true
                         
@@ -148,12 +136,12 @@ class Leader(sname: String, l_id:Int) extends Actor{
     }//end commander
 
     def act(){
+        alive(port)
+        register(id, self)
+
         var returnA= Scout(this, acceptors, leader_b_num)
         while(true){
              Leaderfun(acceptors, replicas)
         }
-
     }
-   
-
 }

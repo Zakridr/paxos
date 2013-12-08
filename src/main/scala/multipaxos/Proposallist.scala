@@ -2,7 +2,7 @@ package multipaxos
 
 
 // a list of proposals and a set of s_num
-class ProposalList(pplist : List[Proposal]){
+class ProposalList(pplist : List[Proposal]) extends Serializable {
     var prlist = pplist
     var s_set = Set[Int]()//track the set of s_num
 

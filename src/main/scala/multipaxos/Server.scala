@@ -1,44 +1,46 @@
 package multipaxos
-import scala.io.Source
+
 import scala.actors._
 import scala.actors.Actor._
-import scala.concurrent._
-import scala.util.control.Breaks._
+import scala.actors.remote.RemoteActor.{alive, register}
 
-// argh, need to change the act method...
-class Server(sname: String, l_id:Int) extends Actor{
-    val name = sname
-    val leader_id = l_id
-    val acceptor = new Acceptor(name, l_id)
-    val replica = new Replica(name, l_id)
+import paxutil.ActorData
+import paxutil.Bootstrapper
 
-    var leader = new Leader(name, l_id)
-    var servers = List[Server]()
 
-    def init_servers(inits: List[Server]) = {
-      servers = inits
-      acceptor.init(servers)
-      replica.init(servers)
-      if(isLeader) {
-        leader.init(getReplicas(servers), getAcceptors(servers))
-      }
+class Server(primeLeader : ActorData, bs : Bootstrapper)  extends Actor{
+    val port = bs.getParams4Local._1.head.port
+    val id = bs.getParams4Local._1.head.id
 
-    }
-    def leaderServer():Server = {
-        return servers(leader_id)
-    }
+    val localAcceptor = bs.getParams4Local._4.head
+    val remoteAcceptors = bs.getParams4Remotes._4
+    val localLeader = bs.getParams4Local._3.head
+    val remoteLeaders = bs.getParams4Remotes._3
+    val localReplica = bs.getParams4Local._2.head
+    val remoteReplicas = bs.getParams4Local._2
+
+                 // I don't think the acceptors need to know who the prime leader is...
+    val acceptor = new Acceptor(primeLeader, localAcceptor)
+    val replica = new Replica(primeLeader, localReplica, remoteLeaders.map(_.makeRemoteActor), localLeader.makeRemoteActor)
+    val leader = new Leader(primeLeader,
+                            localLeader,
+                            (localReplica :: remoteReplicas).map(_.makeRemoteActor),
+                            (localAcceptor :: remoteAcceptors).map(_.makeRemoteActor))
 
     def getAcceptor():Acceptor={ return acceptor}
 
     def getReplicas():Replica={return replica}
 
-    def isLeader():Boolean = leaderServer().name == name
+    def isLeader():Boolean = primeLeader.id == localLeader.id
 
     def getReplicas(ss: List[Server]):List[Replica] = ss.map( s => s.replica)
 
     def getAcceptors(ss: List[Server]):List[Acceptor] = ss.map( s => s.acceptor)
 
     def act(){
+        alive(port)
+        register(id, self)
+
         acceptor.start
         replica.start  
         if(isLeader()){leader.start}
@@ -50,12 +52,7 @@ class Server(sname: String, l_id:Int) extends Actor{
                 }
             }
         }
-
     }
 
-     def printArray()={
-        replica.printArray()
-
-    }
-
-    }
+    def printArray()= replica.printArray()
+}
