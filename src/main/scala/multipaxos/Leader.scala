@@ -5,7 +5,7 @@ import scala.actors.remote.RemoteActor.{alive, register}
 
 import paxutil._
 
-class Leader(params : ActorData, ls : ActorBag, rs : ActorBag, as : ActorBag)  extends Actor{
+class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : ActorBag, as : ActorBag)  extends Actor{
     var leader_id = Symbol("0")
 
     val leaders = ls
@@ -39,64 +39,62 @@ class Leader(params : ActorData, ls : ActorBag, rs : ActorBag, as : ActorBag)  e
     def Leaderfun(l_acceptors : ActorBag, l_replicas : ActorBag) = {
         var acc = l_acceptors
         var rep = l_replicas
-        
-            receive{
-                case (rep_id : Symbol, "propose", p : Proposal) => {
-                   //println("As leader server: " + id + " I receive a proposal:" + p.toString + " from Replica" + rep_id)
-                    if(!leader_proposals.exist_cmd(p.command)){
-                        //println("I put the request into my propsal and active is:" + active)
-                        leader_proposals.put(p)
-                        if(active){  
-                            new Leader_Commander(this, acc, rep, new Pvalue(leader_b_num, p.s_num, p.command)).start
-                        }
-                    }//end if
-                }//end case
 
-                case ("adopted", b : B_num, pvals : PvalueList) => {
-                    leader_proposals = leader_proposals.Xor(pvals.Pmax())
-                    println("As leader server: " + id + " I got adoptted and here is my proposals to be command:")
-                    leader_proposals.print()
-
-                    for(e <- leader_proposals.prlist){
-                        new Leader_Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command)).start
-                        
-                        //println("ok, returned from function command")
-
-                    }// end for
-                    active = true
-                }//end case
-                case ("Sorry", b1: B_num) => {
-                    if(b1 > leader_b_num && active ){
-                        val active_leader = getLeader(b1.getLeader())
-                        println("I'm leader " + id +" I got preempt msg and start to ping active leader " + b1.getLeader)
-                        active = false
-                        //now I start ping the current active leader until it is unavailable
-                        
-                        new Ping(this, active_leader, pingtimeout).start
+        receive{
+            case (rep_id : Symbol, "propose", p : Proposal) => {
+                //println("As leader server: " + id + " I receive a proposal:" + p.toString + " from Replica" + rep_id)
+                if(!leader_proposals.exist_cmd(p.command)){
+                    //println("I put the request into my propsal and active is:" + active)
+                    leader_proposals.put(p)
+                    if(active){  
+                        new Leader_Commander(this, acc, rep, new Pvalue(leader_b_num, p.s_num, p.command)).start
                     }
-                }
-                case ("scout")=>{
-                    if(!active){
-                        leader_b_num = new B_num(leader_b_num.b_num+1, leader_id)
-                        // TODO needs to change... need to get the slot number a different way
-                        val ss_num= replicas(leader_id).slot_num
-                        new Leader_Scout(this, acc, leader_b_num,ss_num).start
-                        Console.println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
-                    }
-                }
-                case ("ping!", remote_leader_sym : Symbol) =>{
-                    if(active){
-                        // TODO using sender here
-                        println("I'm active leader "+ id +" I send alive msg to leader "+ remote_leader_sym)
-                        sender!("alive!")
-                    }
+                }//end if
+            }//end case
 
+            case ("adopted", b : B_num, pvals : PvalueList) => {
+                leader_proposals = leader_proposals.Xor(pvals.Pmax())
+                println("As leader server: " + id + " I got adoptted and here is my proposals to be command:")
+                leader_proposals.print()
+
+                for(e <- leader_proposals.prlist){
+                    new Leader_Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command)).start
+                    //println("ok, returned from function command")
+                }// end for
+                active = true
+            }//end case
+            case ("Sorry", b1: B_num) => {
+                if(b1 > leader_b_num && active ){
+                    val active_leader = getLeader(b1.getLeader())
+                    println("I'm leader " + id +" I got preempt msg and start to ping active leader " + b1.getLeader)
+                    active = false
+                    //now I start ping the current active leader until it is unavailable
+
+                    new Ping(this, active_leader, pingtimeout).start
                 }
+            }
+            case ("scout")=>{
+                if(!active){
+                    leader_b_num = new B_num(leader_b_num.b_num+1, leader_id)
+                    // TODO 
+                    // hmmm
+                    val ss_num= localReplica.slot_num
+                    new Leader_Scout(this, acc, leader_b_num,ss_num).start
+                    Console.println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
+                }
+            }
+            case ("ping!", remote_leader_sym : Symbol) => {
+                if(active){
+                    // TODO using sender here
+                    println("I'm active leader "+ id +" I send alive msg to leader "+ remote_leader_sym)
+                    sender!("alive!")
+                }
+            }
                 //to simulate the case when the active leader died
-                case ("exit!")=>{                  
-                    exit()
-                }
-            }//end receive
+            case ("exit!")=>{                  
+                exit()
+            }
+        }//end receive
     }//end Leaderfun
 
     def act(){
@@ -104,9 +102,8 @@ class Leader(params : ActorData, ls : ActorBag, rs : ActorBag, as : ActorBag)  e
         register(id, self)
 
         //share the slot_num from its co-located replica
-        // really should change... race conditions?
         // TODO
-        val ss_num= replicas(leader_id).slot_num
+        val ss_num= localReplica.slot_num
         new Leader_Scout(this, acceptors, leader_b_num, ss_num).start
 
         while(true){

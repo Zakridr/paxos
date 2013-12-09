@@ -17,12 +17,12 @@ class Server(bs : Bootstrapper)  extends Actor{
     val localReplica = bs.getParams4Local._2.head
     val remoteReplicas = bs.getParams4Remotes._2
 
-                 // I don't think the acceptors need to know who the prime leader is...
     val acceptor = new Acceptor(localAcceptor, new ActorBag(localLeader :: remoteLeaders))
     val replica = new Replica(localReplica, 
                               new ActorBag(remoteLeaders), 
                               localLeader.makeActorHandle)
     val leader = new Leader(localLeader,
+                            replica, 
                             new ActorBag(remoteLeaders),
                             new ActorBag(localReplica :: remoteReplicas),
                             new ActorBag(localAcceptor :: remoteAcceptors))
