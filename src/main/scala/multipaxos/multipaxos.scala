@@ -32,12 +32,11 @@ object multipaxos extends App {
      for(s <- servers){
         s!("request", c4)      
         s!("request", c5)
-       
-
     }
+
     //because s6's the b_num is relatively high, so it is highly possible to be chosen as leader
     //we killed it here to see if somebody else took his place
-    servers(4).leader!("exit!")
+    //servers(4).leader!("exit!")
     
     Thread.sleep(1000)
 
@@ -54,5 +53,4 @@ object multipaxos extends App {
    for(s <- servers){
        s.printArray()
    }
-   println("I'm still alive")
 }

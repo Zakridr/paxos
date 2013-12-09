@@ -79,6 +79,7 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor) 
                     //println("As replica server: " + id + " perform decision" + p.toString())
                 }//end while
             }//end case
+            case ("print") => printArray
         }//end receive
     }
      def printArray(){

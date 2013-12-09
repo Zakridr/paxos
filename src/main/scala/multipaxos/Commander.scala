@@ -25,6 +25,7 @@ class Commander(params : ActorData, l : Leader, l_replicas : ActorBag, l_accepto
         alive(params.port)
         register(params.id, self)
 
+        println(params.id + ": STARTED")
         while(true){
             receive{
                 case ("accept reply", acc_id : Symbol, b : B_num) => {

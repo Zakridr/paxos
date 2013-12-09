@@ -31,8 +31,6 @@ class Server(bs : Bootstrapper)  extends Actor{
         alive(port)
         register(id, self)
 
-        //println("Server " + id + " has " + (localReplica :: remoteReplicas).length + " replicas")
-
         acceptor.start
         replica.start  
         leader.start
