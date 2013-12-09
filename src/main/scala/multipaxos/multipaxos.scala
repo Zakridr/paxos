@@ -11,13 +11,13 @@ object multipaxos extends App {
 
     val servers = bstraps.map(bs => new Server(bs))
 
-    val c1 = new Command(1, 0, "write0")
-    val c2 = new Command(1, 1, "write1")
-    val c3 = new Command(1, 2, "write2")
-    val c4 = new Command(1, 3, "write3")
-    val c5 = new Command(1, 4, "write4")
-    val c6 = new Command(1, 5, "write5")
-    val c7 = new Command(1, 6, "write6")
+    val c1 = CommandFactory.makeCommand(1)
+    val c2 = CommandFactory.makeCommand(2)
+    val c3 = CommandFactory.makeCommand(3)
+    val c4 = CommandFactory.makeCommand(4)
+    val c5 = CommandFactory.makeCommand(5)
+    val c6 = CommandFactory.makeCommand(6)
+    val c7 = CommandFactory.makeCommand(7)
 
     servers.foreach(_.start)
 

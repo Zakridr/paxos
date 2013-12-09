@@ -2,6 +2,7 @@ package multipaxos
 
 import scala.actors.remote._
 import scala.actors.remote.RemoteActor._
+import paxutil._
 
 object ActFact {
 
@@ -9,5 +10,5 @@ object ActFact {
 }
 
 object CommandFactory {
-    def makeCommand(num : Int) = new Command(1, num, "write" + num)
+    def makeCommand(num : Int) = new Command(new ActorData("127.0.0.1", 9010, Symbol("c1")), num, Symbol("write" + num))
 }

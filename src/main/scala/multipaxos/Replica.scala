@@ -11,7 +11,7 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor) 
     val port = params.port
     val id = params.id
 
-    var array_content = new Array[String](100)
+    var array_content = new Array[Symbol](100)
     var state = -1
     var slot_num = 0
     var replicas_proposals = new ProposalList(List[Proposal]()) // empty initially

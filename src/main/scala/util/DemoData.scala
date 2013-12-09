@@ -1,6 +1,6 @@
 package paxutil
 
-class DemoData(init : Colour) extends AppData[Colour] {
+class DemoData(init : Colour) extends AppData {
 
     val state = init
     val cdelta = 20
@@ -13,6 +13,6 @@ class DemoData(init : Colour) extends AppData[Colour] {
             case 'decR => new DemoData(state.changeRed(-cdelta))
             case 'decG => new DemoData(state.changeGreen(-cdelta))
             case 'decB => new DemoData(state.changeBlue(-cdelta))
-            case _     => throw new RuntimeException("oops... no op")
+            case _     => throw new RuntimeException("oops... no fcn for this op: " + op)
         }
 }

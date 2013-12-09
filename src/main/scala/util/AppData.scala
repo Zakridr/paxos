@@ -1,7 +1,6 @@
 package paxutil
 
-abstract class AppData[T] {
+abstract class AppData {
 
-    def state : T
-    def applyOp(op : Symbol) : AppData[T]
+    def applyOp(op : Symbol) : AppData
 }
