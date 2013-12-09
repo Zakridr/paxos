@@ -45,9 +45,15 @@ object multipaxos extends App {
         
         s!("request", c6)
         s!("request", c7)
-
     }
    
+   Thread.sleep(4000)
+
+   for (s <- servers) {
+        s!("request", CommandFactory.makeCommand(8))
+        s!("request", CommandFactory.makeCommand(9))
+   }
+
    Thread.sleep(4000)
 
    for(s <- servers){

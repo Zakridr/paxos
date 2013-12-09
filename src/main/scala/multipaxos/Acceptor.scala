@@ -37,8 +37,8 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
                 val pruned_accepted = prune(slot_num)
                 scout!("prepare reply", id, acceptor_b_num, pruned_accepted)
                 Console.println(id + ": PREPARE REPLY, ballot: " + acceptor_b_num.toString + ", scout: " + scoutdata.id)
-                Console.println("And I attached my accepted pvalues:" )
-                pruned_accepted.print()
+                //Console.println("And I attached my accepted pvalues:" )
+                //pruned_accepted.print()
 
             }//end case
             case ("accept request", p:Pvalue, cmmdrdata : ActorData) =>{

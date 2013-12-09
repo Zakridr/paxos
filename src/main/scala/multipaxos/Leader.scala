@@ -21,6 +21,8 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
     var leader_proposals = new ProposalList(List[Proposal]())
     var commandercount = 0
     var pingercount = 0
+    var ispinging = false
+    // TODO added this just now. dodgy!
 
     def makeScout(ballot : B_num, slot_num : Int) = {
         new Scout(new ActorData(params.host, port, Symbol(id.name + "s")),
@@ -82,13 +84,14 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                 println(id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
                 // TODO, always ping if pre-empted!
                 //if(b1 > leader_b_num && active ){
-                if(b1 > leader_b_num ){
+                if(b1 > leader_b_num && !ispinging){
                     val active_leader = getLeader(b1.getLeader())
                     println(id +": PRE-EMPTED, starting to ping " + b1.getLeader)
                     active = false
                     //now I start ping the current active leader until it is unavailable
 
                     //new Ping(this, active_leader, pingtimeout).start
+                    ispinging = true
                     makePing(active_leader)
                 }
             }
@@ -97,9 +100,10 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                     leader_b_num = new B_num(leader_b_num.b_num+1, id)
                     // TODO 
                     // hmmm
+                    // probably fine?
                     val ss_num= localReplica.slot_num
+                    ispinging = false
                     makeScout(leader_b_num, ss_num)
-                    //new Scout(this, params, acc, leader_b_num,ss_num).start
                     Console.println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
                 }
             }
