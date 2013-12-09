@@ -15,4 +15,7 @@ class DemoData(init : Colour) extends AppData {
             case 'decB => new DemoData(state.changeBlue(-cdelta))
             case _     => throw new RuntimeException("oops... no fcn for this op: " + op)
         }
+
+    def getString() = state.getString
+   
 }

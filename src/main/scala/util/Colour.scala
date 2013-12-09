@@ -17,4 +17,6 @@ class Colour(red : Int, green : Int, blue : Int) extends Color(red : Int, green 
     def changeBlue(blue : Int) = {
         new Colour (getRed, getGreen, bound(getBlue + blue))
     }
+
+    def getString() = ("Red: " + red + ", Green: " + green + ", Blue: " + blue)
 }

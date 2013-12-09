@@ -4,22 +4,31 @@ import scala.actors._
 import scala.actors.Actor._
 import scala.concurrent._
 
-import paxutil.Bootstrapper
+import paxutil._
+// 'incR 
+// 'incG 
+// 'incB 
+// 'decR 
+// 'decG 
+// 'decB 
+
 
 object multipaxos extends App {
     val bstraps = List("local1.csv", "local2.csv", "local3.csv", "local4.csv", "local5.csv").map(fname => new Bootstrapper(fname))
+    val initstate = new DemoData(new Colour(0, 0, 0))
 
-    val servers = bstraps.map(bs => new Server(bs))
+    val servers = bstraps.map(bs => new Server(bs, initstate))
 
-    val c1 = CommandFactory.makeCommand(1)
-    val c2 = CommandFactory.makeCommand(2)
-    val c3 = CommandFactory.makeCommand(3)
-    val c4 = CommandFactory.makeCommand(4)
-    val c5 = CommandFactory.makeCommand(5)
-    val c6 = CommandFactory.makeCommand(6)
-    val c7 = CommandFactory.makeCommand(7)
-
-    servers.foreach(_.start)
+    val c1 = CommandFactory.makeCommand(1, 'incR)
+    val c2 = CommandFactory.makeCommand(2, 'incR)
+    val c3 = CommandFactory.makeCommand(3, 'incR )
+    val c4 = CommandFactory.makeCommand(4, 'incR )
+    val c5 = CommandFactory.makeCommand(5, 'incR  )
+    val c6 = CommandFactory.makeCommand(6, 'incR  )
+    val c7 = CommandFactory.makeCommand(7, 'incR )
+    val c8 = CommandFactory.makeCommand(8, 'incR  )
+    val c9 = CommandFactory.makeCommand(9, 'incR )
+    servers.foreach(_.start)                  
 
    //broadcast request
     for(s <- servers){
@@ -50,8 +59,8 @@ object multipaxos extends App {
    Thread.sleep(4000)
 
    for (s <- servers) {
-        s!("request", CommandFactory.makeCommand(8))
-        s!("request", CommandFactory.makeCommand(9))
+        s!("request", c8)
+        s!("request", c9)
    }
 
    Thread.sleep(4000)

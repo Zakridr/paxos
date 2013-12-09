@@ -6,7 +6,7 @@ import scala.actors.remote.RemoteActor.{alive, register}
 
 import paxutil._
 
-class Server(bs : Bootstrapper)  extends Actor{
+class Server(bs : Bootstrapper, initState : AppData)  extends Actor{
     val port = bs.getParams4Local._1.head.port
     val id = bs.getParams4Local._1.head.id
 
@@ -20,7 +20,8 @@ class Server(bs : Bootstrapper)  extends Actor{
     val acceptor = new Acceptor(localAcceptor, new ActorBag(localLeader :: remoteLeaders))
     val replica = new Replica(localReplica, 
                               new ActorBag(remoteLeaders), 
-                              localLeader.makeActorHandle)
+                              localLeader.makeActorHandle,
+                              initState)
     val leader = new Leader(localLeader,
                             replica, 
                             new ActorBag(remoteLeaders),

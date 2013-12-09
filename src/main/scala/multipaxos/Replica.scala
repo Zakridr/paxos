@@ -5,14 +5,14 @@ import scala.actors.remote.RemoteActor.{alive, register}
 
 import paxutil._
 
-class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor) extends Actor{
+class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, initstate : AppData) extends Actor{
     val remoteLeaders = rLeaders
     val localLeader = lLeader
     val port = params.port
     val id = params.id
 
     var array_content = new Array[Symbol](100)
-    var state = -1
+    var state = initstate
     var slot_num = 0
     var replicas_proposals = new ProposalList(List[Proposal]()) // empty initially
     var replicas_decisions = new ProposalList(List[Proposal]())//empty initially
@@ -48,7 +48,7 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor) 
         }else{
             this.synchronized {
                 array_content(slot_num) = c.getOp()
-                state += 1
+                state = state.applyOp(c.getOp)
                 slot_num += 1
             }
             //TODO 
@@ -83,10 +83,11 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor) 
         }//end receive
     }
      def printArray(){
-        println("print array:")
+        println(id + ": print array")
         for(i <- 0 to slot_num-1){
             print(array_content(i) + " ")
         }
+        println(id + ": state is: " + state.getString)
         println()
     }
 
