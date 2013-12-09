@@ -26,7 +26,8 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
     def Acceptor_fun(){
         // as acceptor
         receive{               
-            case ("prepare request", l_id:Symbol, b:B_num, scout_id : Symbol, slot_num:Int) =>{
+            case ("prepare request", b:B_num, slot_num:Int, scoutdata : ActorData) =>{
+                val scout = scoutdata.makeActorHandle
                 //println("I'm server:"+ id +" I got prepare request")
                 if(b > acceptor_b_num){
                     acceptor_b_num = b
@@ -34,7 +35,7 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
 
                 //prune the pvalues according to the slot_num
                 val pruned_accepted = prune(slot_num)
-                sender!("prepare reply", id, acceptor_b_num, pruned_accepted)
+                scout!("prepare reply", id, acceptor_b_num, pruned_accepted)
                 Console.println("As accecptor server: " + id + " reply prepare request with b_num:" + acceptor_b_num.toString())
                 Console.println("And I attached my accepted pvalues:" )
                 pruned_accepted.print()

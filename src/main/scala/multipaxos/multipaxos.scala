@@ -20,6 +20,7 @@ object multipaxos extends App{
     val c7 = new Command(1, 6, "write6")
 
     servers.foreach(_.start)
+    /*
 
    //broadcast request
     for(s <- servers){
@@ -51,13 +52,12 @@ object multipaxos extends App{
         s!("request", c7)
 
     }
-
-
-
    
-     Thread.sleep(2000)
+    */
+   Thread.sleep(4000)
 
-    for(s <- servers){
-        s.printArray()
-    }
+   for(s <- servers){
+       s.printArray()
+   }
+   println("I'm still alive")
 }

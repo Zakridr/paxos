@@ -14,6 +14,7 @@ class Leader_Commander(l : Leader, l_acceptors : ActorBag, l_replicas : ActorBag
     val acc = l_acceptors.actorsToList
     val rep = l_replicas.actorsToList
     for(s <- acc){
+        // TODO
         s!("accept request", l, pv, this)
         //Console.println("As leader server: " + l.name + " in command I send accept reuest to " + s.name +" with pvalue:"+pv.toString())
     }

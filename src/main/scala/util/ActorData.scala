@@ -3,7 +3,7 @@ package paxutil
 import scala.actors.remote.RemoteActor._
 import scala.actors.remote.Node
 
-class ActorData(h: String, p: Int, i : Symbol) {
+class ActorData(h: String, p: Int, i : Symbol) extends Serializable {
     val host = h
     val port = p
     val id  = i

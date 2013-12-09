@@ -6,7 +6,6 @@ import scala.actors.remote.RemoteActor.{alive, register}
 import paxutil._
 
 class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : ActorBag, as : ActorBag)  extends Actor{
-    var leader_id = Symbol("0")
 
     val leaders = ls
     val replicas = rs
@@ -16,15 +15,10 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
 
     val pingtimeout = 300
 
-    var leader_b_num = new B_num(0, Symbol("0"))
+    var leader_b_num = new B_num(0, id)
     var active = false
     var leader_proposals = new ProposalList(List[Proposal]())
     //var scout_waitfor = servers diff List(this)
-
-    def init(l_id : Symbol) = {
-      leader_id = l_id
-      leader_b_num = new B_num(0,l_id)
-    }
 
     /*
     def getReplica(replica_id:Int):Replica={
@@ -75,11 +69,11 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
             }
             case ("scout")=>{
                 if(!active){
-                    leader_b_num = new B_num(leader_b_num.b_num+1, leader_id)
+                    leader_b_num = new B_num(leader_b_num.b_num+1, id)
                     // TODO 
                     // hmmm
                     val ss_num= localReplica.slot_num
-                    new Leader_Scout(this, acc, leader_b_num,ss_num).start
+                    new Leader_Scout(this, params, acc, leader_b_num,ss_num).start
                     Console.println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
                 }
             }
@@ -103,9 +97,11 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
 
         //share the slot_num from its co-located replica
         // TODO
+        println("I'm leader " + id + " and I'm sending prepare request")
         val ss_num= localReplica.slot_num
-        new Leader_Scout(this, acceptors, leader_b_num, ss_num).start
+        new Leader_Scout(this, params, acceptors, leader_b_num, ss_num).start
 
+        println("I'm leader " + id + " and I started my scout")
         while(true){
              Leaderfun(acceptors, replicas)
         }
