@@ -6,7 +6,7 @@ import scala.concurrent._
 
 import paxutil.Bootstrapper
 
-object multipaxos extends App{
+object multipaxos extends App {
     val bstraps = List("local1.csv", "local2.csv", "local3.csv", "local4.csv", "local5.csv").map(fname => new Bootstrapper(fname))
 
     val servers = bstraps.map(bs => new Server(bs))
@@ -20,7 +20,6 @@ object multipaxos extends App{
     val c7 = new Command(1, 6, "write6")
 
     servers.foreach(_.start)
-    /*
 
    //broadcast request
     for(s <- servers){
@@ -30,9 +29,6 @@ object multipaxos extends App{
     }
 
     // s4 has the biggest b_num, it is highly possible to be chosen as leader
-    
-    
-
      for(s <- servers){
         s!("request", c4)      
         s!("request", c5)
@@ -53,7 +49,6 @@ object multipaxos extends App{
 
     }
    
-    */
    Thread.sleep(4000)
 
    for(s <- servers){

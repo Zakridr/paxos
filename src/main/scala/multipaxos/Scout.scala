@@ -1,37 +1,29 @@
 package multipaxos
 
-import scala.io.Source
 import scala.actors._
-import scala.actors.Actor._
-import scala.concurrent._
 import scala.actors.Actor._
 import scala.actors.remote.RemoteActor.{alive, register}
 
 import paxutil._
 
-
-
  //leader function scout
  // for now, I guess it's ok to leave the leader as a paramter, since he's local...
-class Leader_Scout(l:Leader, leaderparams : ActorData, l_acceptors : ActorBag,  b:B_num, slot_num: Int) extends Actor{
-    val id = Symbol(leaderparams.id + "s")
-    val port = leaderparams.port
-    val mydata = new ActorData(leaderparams.host, port, id)
-
+class Scout(params : ActorData, l : Leader, l_acceptors : ActorBag,  b:B_num, slot_num: Int) extends Actor{
+    val id = params.id
+    val port = params.port
     val acc = l_acceptors.actorsToList 
 
     var scout_waitfor = l_acceptors.symbolsToList
     var pvalues = new PvalueList()
+
     for(s <- acc){
-        //TODO
-        // l.id might need to be changed
-        s!("prepare request", b, slot_num, mydata)
+        s ! ("prepare request", b, slot_num, params)
         //Console.println("As scout leader server: " + l.name + " I send prepare request to acceptor: " + s.name +" with b_num:"+b.toString())
     }
     def act(){
-        alive(port)
-        register(id, self)
-        println("I'm scout with id " + id + ", and I have leader id : " + leaderparams.id)
+        alive(params.port)
+        register(params.id, self)
+        println("I'm scout with id " + params.id)
 
         while(true){
             receive{

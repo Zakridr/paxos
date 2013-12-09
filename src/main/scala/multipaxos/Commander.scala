@@ -1,25 +1,30 @@
 package multipaxos
 
-import scala.io.Source
 import scala.actors._
 import scala.actors.Actor._
-import scala.concurrent._
+import scala.actors.remote.RemoteActor.{alive, register}
 
 import paxutil._
 
 //this class is used in Leader for concurrency
 
-class Leader_Commander(l : Leader, l_acceptors : ActorBag, l_replicas : ActorBag, pv : Pvalue) extends Actor {
+class Commander(params : ActorData, l : Leader, l_replicas : ActorBag, l_acceptors : ActorBag, pv : Pvalue) extends Actor {
+    //val id = Symbol(leaderparams.id + "c")
+    //val port = leaderparams.port
+    //val mydata = new ActorData(leaderparams.host, port, id)
+
     var waitfor = l_acceptors.symbolsToList
     val acc = l_acceptors.actorsToList
     val rep = l_replicas.actorsToList
     for(s <- acc){
-        // TODO
-        s!("accept request", l, pv, this)
+        s!("accept request", pv, params)
         //Console.println("As leader server: " + l.name + " in command I send accept reuest to " + s.name +" with pvalue:"+pv.toString())
     }
 
     def act(){
+        alive(params.port)
+        register(params.id, self)
+
         while(true){
             receive{
                 case ("accept reply", acc_id : Symbol, b : B_num) => {

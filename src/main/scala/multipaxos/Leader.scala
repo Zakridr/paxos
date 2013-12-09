@@ -6,18 +6,17 @@ import scala.actors.remote.RemoteActor.{alive, register}
 import paxutil._
 
 class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : ActorBag, as : ActorBag)  extends Actor{
-
     val leaders = ls
     val replicas = rs
     val acceptors = as
     val port = params.port
     val id = params.id
-
     val pingtimeout = 300
 
     var leader_b_num = new B_num(0, id)
     var active = false
     var leader_proposals = new ProposalList(List[Proposal]())
+    var commandercount = 0
     //var scout_waitfor = servers diff List(this)
 
     /*
@@ -28,6 +27,25 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
         return acceptors(acceptor_id)
     }
     */
+
+    def makeScout(ballot : B_num, slot_num : Int) = {
+        new Scout(new ActorData(params.host, port, Symbol(id.name + "s")),
+                  this,
+                  as,
+                  ballot,
+                  slot_num).start
+    }
+
+//class Commander(params : ActorData, l : Leader,  l_acceptors : ActorBag, l_replicas : ActorBag, pv : Pvalue) extends Actor {
+    def makeCommander(pv : Pvalue) = {
+        new Commander(new ActorData(params.host, port, Symbol(params.id.name + "c" + commandercount)),
+                      this,
+                      rs, 
+                      as,
+                      pv).start
+        commandercount = commandercount + 1
+    }
+
     def getLeader(l_id : Symbol) : AbstractActor = leaders.getActBySym(l_id)
 
     def Leaderfun(l_acceptors : ActorBag, l_replicas : ActorBag) = {
@@ -41,7 +59,8 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                     //println("I put the request into my propsal and active is:" + active)
                     leader_proposals.put(p)
                     if(active){  
-                        new Leader_Commander(this, acc, rep, new Pvalue(leader_b_num, p.s_num, p.command)).start
+                        //new Commander(this, acc, rep, new Pvalue(leader_b_num, p.s_num, p.command)).start
+                        makeCommander(new Pvalue(leader_b_num, p.s_num, p.command))
                     }
                 }//end if
             }//end case
@@ -52,7 +71,8 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                 leader_proposals.print()
 
                 for(e <- leader_proposals.prlist){
-                    new Leader_Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command)).start
+                    //new Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command)).start
+                    makeCommander(new Pvalue(leader_b_num, e.s_num, e.command))
                     //println("ok, returned from function command")
                 }// end for
                 active = true
@@ -73,7 +93,8 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                     // TODO 
                     // hmmm
                     val ss_num= localReplica.slot_num
-                    new Leader_Scout(this, params, acc, leader_b_num,ss_num).start
+                    makeScout(leader_b_num, ss_num)
+                    //new Scout(this, params, acc, leader_b_num,ss_num).start
                     Console.println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
                 }
             }
@@ -96,10 +117,10 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
         register(id, self)
 
         //share the slot_num from its co-located replica
-        // TODO
         println("I'm leader " + id + " and I'm sending prepare request")
         val ss_num= localReplica.slot_num
-        new Leader_Scout(this, params, acceptors, leader_b_num, ss_num).start
+        makeScout(leader_b_num, ss_num)
+        //new Scout(this, params, acceptors, leader_b_num, ss_num).start
 
         println("I'm leader " + id + " and I started my scout")
         while(true){

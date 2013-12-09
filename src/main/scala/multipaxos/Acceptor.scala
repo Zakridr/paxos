@@ -41,17 +41,16 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
                 pruned_accepted.print()
 
             }//end case
-            case ("accept request", l_id: Symbol, p:Pvalue, commdr_id :Symbol) =>{
+            case ("accept request", p:Pvalue, cmmdrdata : ActorData) =>{
                 //println("server "+ id + " find a accept request match")
+                val cmmdr = cmmdrdata.makeActorHandle
 
                 if(p.get_B_num() >= acceptor_b_num){
                     acceptor_b_num = p.get_B_num()
                     acceptor_accepted.put(p)
                 }
-                //Note here if use reply or sender!(msg), the Leader_Commander will not able to receive this msg
-                //Zach: when I try to make classes which extend Serializable, I get runtime errors... we need a different solution then
                 // TODO using sender here
-                sender!("accept reply", this, acceptor_b_num)
+                cmmdr ! ("accept reply", id, acceptor_b_num)
                 //println("hello, hello, hello, I receive  accept request from " + sender)
                 //Console.println("As accecptor server: " + id + " reply accept request with b_num:" + acceptor_b_num.toString())
             }// end case
