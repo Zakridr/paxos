@@ -22,6 +22,7 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
     var commandercount = 0
     var pingercount = 0
     var ispinging = false
+    var currentping = makePing(this)
     // TODO added this just now. dodgy!
 
     def makeScout(ballot : B_num, slot_num : Int) = {
@@ -41,12 +42,13 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
         commandercount = commandercount + 1
     }
 
-    def makePing(activeLeader: AbstractActor) = {
-        new Ping(new ActorData(params.host, port, Symbol(params.id.name + "p" + pingercount)),
+    def makePing(activeLeader: AbstractActor):Ping = {
+       val result =  new Ping(new ActorData(params.host, port, Symbol(params.id.name + "p" + pingercount)),
                  this,
                  activeLeader,
-                 pingtimeout).start
+                 pingtimeout)
         pingercount = pingercount + 1
+        return result
     }
 
     def getLeader(l_id : Symbol) : AbstractActor = leaders.getActBySym(l_id)
@@ -79,20 +81,24 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                     //println("ok, returned from function command")
                 }// end for
                 active = true
+                
             }//end case
             case ("Sorry", b1: B_num) => {
                 println(id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
                 // TODO, always ping if pre-empted!
                 //if(b1 > leader_b_num && active ){
-                if(b1 > leader_b_num && !ispinging){
+                if(b1 > leader_b_num){
                     val active_leader = getLeader(b1.getLeader())
                     println(id +": PRE-EMPTED, starting to ping " + b1.getLeader)
                     active = false
                     //now I start ping the current active leader until it is unavailable
-
-                    //new Ping(this, active_leader, pingtimeout).start
+                    if(ispinging){
+                        currentping !?("exit ping!")
+                    }
+                    currentping = makePing(active_leader)
+                    currentping.start
                     ispinging = true
-                    makePing(active_leader)
+                   
                 }
             }
             case ("scout")=>{
@@ -102,7 +108,7 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                     // hmmm
                     // probably fine?
                     val ss_num= localReplica.slot_num
-                    ispinging = false
+                    //ispinging = false
                     makeScout(leader_b_num, ss_num)
                     Console.println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
                 }
@@ -152,6 +158,11 @@ class Ping(params : ActorData, me : Leader, active_leader : AbstractActor, mils 
                 println(params.id + ": PING NO ANSWER")
                 me!("scout")
                 exit()
+            }
+            receive{
+                case ("exit ping!")=>{
+                    exit()
+                }
             }
         }
     }
