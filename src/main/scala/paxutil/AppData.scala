@@ -1,6 +1,6 @@
 package paxutil
 
-abstract class AppData {
+abstract class AppData extends Serializable {
 
     def applyOp(op : Symbol) : AppData
     

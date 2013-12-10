@@ -6,30 +6,18 @@ import swing._
 import swing.Swing.onEDT
 import java.awt.{Color, Graphics2D, Point, geom, Dimension}
 
-class Colour(red : Int, green : Int, blue : Int) extends Color(red : Int, green : Int, blue : Int) {
-  def bound(colval : Int) = {
-    if (colval > 255) 255 else if (colval < 0) 0 else colval
-  }
-
-  def changeRed(red : Int) = {
-    new Colour (bound(this.getRed + red), this.getGreen, this.getBlue)
-  }
-
-  def changeGreen(green : Int) = {
-    new Colour (this.getRed, bound(this.getGreen + green), this.getBlue)
-  }
-
-  def changeBlue(blue : Int) = {
-    new Colour (getRed, getGreen, bound(getBlue + blue))
-  }
-}
+import paxutil._
+// for local demo...
+import multipaxos.Server
 
 object PaxosInterface extends SimpleSwingApplication {
   val rows = 3
   val cols = 4
 
   val colourDelta = 20
-  implicit val intermediator = new Intermediator()
+
+  val btstrap = new Bootstrapper("client.csv")
+  implicit val intermediator = new Intermediator(new ActorBag(btstrap.getParams4Remotes._2))
 
   // buttons
   val incrR = makeColourButton("increase red", 'incR) 
@@ -60,7 +48,7 @@ object PaxosInterface extends SimpleSwingApplication {
 
   // makes a pane that draws in response 
   // to messages from the given server
-  def makeServerDisplay(servername : String) = {
+  def makeServerDisplay(replicaID : Symbol) = {
     new Panel {
       var currColour = new Colour(0, 0, 0)
       var blah = "no button clicked"
@@ -77,18 +65,24 @@ object PaxosInterface extends SimpleSwingApplication {
         g.fillArc(minDim / 4, minDim / 4, minDim / 2, minDim / 2, 0, 360) 
       }
       reactions += {
-        case Receive('incR) => currColour = currColour.changeRed(colourDelta)
+          // I just need to know the new state
+        case Receive((`replicaID`, repState : DemoData)) => {
+            println("GUI: display for replica " + replicaID + " got message")
+            currColour = repState.state
+            repaint()
+        }
+                               /*
+        case Receive((`replicaID`, 'decR)) => currColour = currColour.changeRed(-colourDelta)
+                                repaint()
+        case Receive((`replicaID`, 'incG)) => currColour = currColour.changeGreen(colourDelta)
+                                repaint()
+        case Receive((`replicaID`, 'decG)) => currColour = currColour.changeGreen(-colourDelta)
+                                repaint()
+        case Receive((`replicaID`, 'incB)) => currColour = currColour.changeBlue(colourDelta)
+                                repaint()
+        case Receive((`replicaID`, 'decB)) => currColour = currColour.changeBlue(-colourDelta)
                                repaint()
-        case Receive('decR) => currColour = currColour.changeRed(-colourDelta)
-                               repaint()
-        case Receive('incG) => currColour = currColour.changeGreen(colourDelta)
-                               repaint()
-        case Receive('decG) => currColour = currColour.changeGreen(-colourDelta)
-                               repaint()
-        case Receive('incB) => currColour = currColour.changeBlue(colourDelta)
-                               repaint()
-        case Receive('decB) => currColour = currColour.changeBlue(-colourDelta)
-                               repaint()
+                               */
       }
     }
   }
@@ -99,13 +93,26 @@ object PaxosInterface extends SimpleSwingApplication {
   def top = new MainFrame {
     title = "Paxos Colour Test"
 
+    // *** this is for the local demo...
+    val bstraps = List("local1.csv", "local2.csv", "local3.csv", "local4.csv", "local5.csv").map(fname => new Bootstrapper(fname))
+    val initstate = new DemoData(new Colour(0, 0, 0))
+    val servers = bstraps.map(bs => new Server(bs, initstate))
+    servers.foreach(_.start)                  
+    // *** end local demo stuff
+
     contents = new BoxPanel(Orientation.Vertical) {
       contents += new FlowPanel {
         contents += makeButtonBox(incrR, decrR)
         contents += makeButtonBox(incrG, decrG)
         contents += makeButtonBox(incrB, decrB)
       }
-      contents += makeServerDisplay("blah")
+      contents += new GridPanel(2, 3) {
+          contents += makeServerDisplay('r1)
+          contents += makeServerDisplay('r2)
+          contents += makeServerDisplay('r3)
+          contents += makeServerDisplay('r4)
+          contents += makeServerDisplay('r5)
+      }
       //border = Swing.EmptyBorder(30, 30, 10, 30)
     }
   }

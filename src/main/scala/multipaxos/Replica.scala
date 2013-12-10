@@ -53,6 +53,9 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, 
             }
             //TODO 
             //send response to client
+            val client = c.cid.makeActorHandle
+            client ! ("response", c.cmid, state, id)
+
        }
     }
 

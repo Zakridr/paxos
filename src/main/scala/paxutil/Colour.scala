@@ -1,7 +1,7 @@
 package paxutil
 import java.awt.Color
 
-class Colour(red : Int, green : Int, blue : Int) extends Color(red : Int, green : Int, blue : Int) {
+class Colour(red : Int, green : Int, blue : Int) extends Color(red : Int, green : Int, blue : Int) with Serializable {
     def bound(colval : Int) = {
         if (colval > 255) 255 else if (colval < 0) 0 else colval
     }
