@@ -1,0 +1,204 @@
+% This is "sig-alternate.tex" V2.0 May 2012
+% This file should be compiled with V2.5 of "sig-alternate.cls" May 2012
+%
+% This example file demonstrates the use of the 'sig-alternate.cls'
+% V2.5 LaTeX2e document class file. It is for those submitting
+% articles to ACM Conference Proceedings WHO DO NOT WISH TO
+% STRICTLY ADHERE TO THE SIGS (PUBS-BOARD-ENDORSED) STYLE.
+% The 'sig-alternate.cls' file will produce a similar-looking,
+% albeit, 'tighter' paper resulting in, invariably, fewer pages.
+%
+% ----------------------------------------------------------------------------------------------------------------
+% This .tex file (and associated .cls V2.5) produces:
+%       1) The Permission Statement
+%       2) The Conference (location) Info information
+%       3) The Copyright Line with ACM data
+%       4) NO page numbers
+%
+% as against the acm_proc_article-sp.cls file which
+% DOES NOT produce 1) thru' 3) above.
+%
+% Using 'sig-alternate.cls' you have control, however, from within
+% the source .tex file, over both the CopyrightYear
+% (defaulted to 200X) and the ACM Copyright Data
+% (defaulted to X-XXXXX-XX-X/XX/XX).
+% e.g.
+% \CopyrightYear{2007} will cause 2007 to appear in the copyright line.
+% \crdata{0-12345-67-8/90/12} will cause 0-12345-67-8/90/12 to appear in the copyright line.
+%
+% ---------------------------------------------------------------------------------------------------------------
+% This .tex source is an example which *does* use
+% the .bib file (from which the .bbl file % is produced).
+% REMEMBER HOWEVER: After having produced the .bbl file,
+% and prior to final submission, you *NEED* to 'insert'
+% your .bbl file into your source .tex file so as to provide
+% ONE 'self-contained' source file.
+%
+% ================= IF YOU HAVE QUESTIONS =======================
+% Questions regarding the SIGS styles, SIGS policies and
+% procedures, Conferences etc. should be sent to
+% Adrienne Griscti (griscti@acm.org)
+%
+% Technical questions _only_ to
+% Gerald Murray (murray@hq.acm.org)
+% ===============================================================
+%
+% For tracking purposes - this is V2.0 - May 2012
+
+\documentclass{sig-alternate}
+
+\begin{document}
+%
+% --- Author Metadata here ---
+%\conferenceinfo{WOODSTOCK}{'97 El Paso, Texas USA}
+%\CopyrightYear{2007} % Allows default copyright year (20XX) to be over-ridden - IF NEED BE.
+%\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE.
+% --- End of Author Metadata ---
+
+\title{Paxos Made Visual}
+%
+% You need the command \numberofauthors to handle the 'placement
+% and alignment' of the authors beneath the title.
+%
+% For aesthetic reasons, we recommend 'three authors at a time'
+% i.e. three 'name/affiliation blocks' be placed beneath the title.
+%
+% NOTE: You are NOT restricted in how many 'rows' of
+% "name/affiliations" may appear. We just ask that you restrict
+% the number of 'columns' to three.
+%
+% Because of the available 'opening page real-estate'
+% we ask you to refrain from putting more than six authors
+% (two rows with three columns) beneath the article title.
+% More than six makes the first-page appear very cluttered indeed.
+%
+% Use the \alignauthor commands to handle the names
+% and affiliations for an 'aesthetic maximum' of six authors.
+% Add names, affiliations, addresses for
+% the seventh etc. author(s) as the argument for the
+% \additionalauthors command.
+% These 'additional authors' will be output/set for you
+% without further effort on your part as the last section in
+% the body of your article BEFORE References or any Appendices.
+
+\numberofauthors{2} %  in this sample file, there are a *total*
+% of EIGHT authors. SIX appear on the 'first-page' (for formatting
+% reasons) and the remaining two appear in the \additionalauthors section.
+%
+\author{
+% You can go ahead and credit any number of authors here,
+% e.g. one 'row of three' or two rows (consisting of one row of three
+% and a second row of one, two or three).
+%
+% The command \alignauthor (no curly braces needed) should
+% precede each author name, affiliation/snail-mail address and
+% e-mail address. Additionally, tag each line of
+% affiliation/address with \affaddr, and tag the
+% e-mail address with \email.
+%
+% 1st. author
+\alignauthor
+Zachary Drudi  \email{zdrudi@cs.ubc.ca}
+% 2nd. author
+\alignauthor
+Jijie Wei		\email{weijijie@cs.ubc.ca}
+}
+
+%\date{30 July 1999}
+
+\maketitle
+
+\begin{abstract}
+We tried to implement a variant of the Multi-Paxos protocol. 
+\end{abstract}
+
+%% A category with the (minimum) three required fields
+%\category{H.4}{Information Systems Applications}{Miscellaneous}
+%%A category including the fourth, optional field follows...
+%\category{D.2.8}{Software Engineering}{Metrics}[complexity measures, performance measures]
+%
+%\terms{Theory}
+%
+%\keywords{ACM proceedings, \LaTeX, text tagging}
+
+\section{Introduction}
+Describe the use of Paxos - replicated state machine for fault tolerance
+describe our project - what does it do? what works, what doesn't?
+
+
+\section{The Protocol}
+
+The Paxos algorithm is described in many papers, and each one uses different terminology. As we used (XXX cite MP) as a starting point for our implementation, we describe the protocol using their terminology.
+
+\subsection{Single-Round Paxos - The Synod Protocol}
+The core protocol in the algorithm 
+
+
+
+\subsection{Multiple Rounds}
+multiple round paxos...
+
+\section{The Implementation}
+
+We wrote our implementation using the Scala programming language. Scala is a relatively new language developed in 2003 which runs on the JVM (XXX cite). We chose Scala because it has library support for Actors, supports functional and object-oriented programming, and has a lightweight syntax. 
+
+\subsection{Concurrency Model - Actors}
+We used actors to represent each participant in the Paxos protocol. Actors are a model of concurrency first developed in 1973 in (XXX cite paper). The Scala implementation of actors combines a thread of control with an object with internal state and methods, and use message passing to communicate. Conceptually, actors do not share any state with one another. Compared to shared-state models of concurrency such as threads, the actor model is much simpler to reason about many race conditions are avoided and locks are unnecessary. Unfortunately, actors are not a silver bullet and concurrent programming is still difficult. It is quite possible to experience deadlocks and livelocks using the actor model.
+
+\subsection{Failure Model}
+What failure model do we support?
+
+\subsection{Design}
+Our implementation of Paxos can run on a network of nodes. Each node runs 3 actors concurrently: a Leader, an Acceptor, and a Replica. 
+
+Commanders? Scouts?
+
+what do leaders do...
+
+what do acceptors do...
+
+what do replicas do...
+describe here, or in the above?
+describe differences between abstract algorithm and our implementation here
+
+
+
+\section{Experiences}
+war stories
+
+\subsection{Understanding the Algorithm}
+
+Paxos has a reputation for being difficult to implement. Despite this, many papers describe Paxos quite straightforwardly and simply. However, all presentations we could find simply outline a simple, impractical version of the protocol. Many authors are vague when describing optimizations to keep the memory usage practical and additions to the protocol to solve leader contention issues. While arguably outside the main thrust of the conceptual core of Paxos, these questions are vital to implementers, and it would be extremely helpful if some authors described them with richer detail and attention.
+
+\subsection{Distributed Versus Local}
+Our initial prototype of the Synod protocol ran on a single JVM. We abused this environment, treating actors as local objects we could communicate with through method calls and field accesses, rather than strictly performing all communication through message passing.
+
+A related technical issue as we transitioned from a local to a distributed implementation was JVM serializability. In order to send objects in messages to actors at possibly remote JVMs, the runtime must serialize the object into a form which can be reconstituted on the remote JVM. Unfortunately, Actor objects in the Scala Actor library cannot be serialized, and our initial implementation sent actors in messages so the receiver could respond to the sender, and print out an informative debug message using the sender's fields. Altogether, changing the implementation so it could work in a distributed setting with RemoteActors involved a surprising amount of work. 
+
+As we were both new to Scala, we wanted to get a prototype working as quickly as possible without spending too much time studying APIs, so after reading the minimum about the Actor library we set to work. Given how time-consuming the required changes were, I believe this was a mistake. We should have started from the very beginning using APIs which support a distributed setting.
+
+\subsection{Underestimating the Difficulty of Concurrency}
+Our initial prototype had one leader, fixed ahead of time. We added multiple leaders relatively late in the timeline of the project, and didn't test the initial multiple leader implementation very much. We only discovered after integrating our Paxos service with the GUI that there were timing bugs with our multiple leader implementation. Unfortunately, this issue was nondeterministic, with some test runs proving successful and others deadlocking. 
+
+
+
+\section{Conclusions}
+what we achieved, what we failed, etc.
+
+
+% The following two commands are all you need in the
+% initial runs of your .tex file to
+% produce the bibliography for the citations in your paper.
+\bibliographystyle{abbrv}
+\bibliography{sigproc}  % sigproc.bib is the name of the Bibliography in this case
+% You must have a proper ".bib" file
+%  and remember to run:
+% latex bibtex latex latex
+% to resolve all references
+%
+% ACM needs 'a single self-contained file'!
+%
+%APPENDICES are optional
+%\balancecolumns
+% That's all folks!
+\end{document}
