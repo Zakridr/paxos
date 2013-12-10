@@ -37,20 +37,20 @@ class Scout(params : ActorData, l : Leader, l_acceptors : ActorBag,  b:B_num, sl
                 case ("prepare reply", acc_id : Symbol, b1:B_num, r:PvalueList) =>{
                     //Console.println("As scout leader server: " + l.name + " I got repare request from" + s.name+ " with its accepted pvaluelist:")
                     //r.print()
-                    println("scout " + id + " got message from acceptor " + acc_id)
+                    //println("scout " + id + " got message from acceptor " + acc_id)
                     if(b.equal(b1)){
                         pvalues.putList(r)
                         scout_waitfor = scout_waitfor diff List(acc_id)
                         ////println("now waitfor length is: "+ scout_waitfor.length + " acceptors length/2 is: "+ acc.length/2)
                         if(scout_waitfor.length < (acc.length/2)){
-                            println("scout " + id + ": we got adopted")
+                            //println("scout " + id + ": we got adopted")
                             l!("adopted", b, pvalues)
                             exit()
                         }
                     }
                     // TODO make sure ifs are lined up properly
                     else{
-                        println(id + ": PRE-EMPTED")
+                        println(id + " : PRE-EMPTED")
                         l!("Sorry", b1)
                         exit()
                     }

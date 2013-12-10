@@ -45,7 +45,7 @@ class Intermediator (replicas : ActorBag) extends Actor with Publisher {
                     println("INTERMEDIATOR: sending new request, command number id is: " + cmmdNum + ", op is: " + op)
                     val cmd = new Command(mydata, cmmdNum, op)
                     for (r <- replicas.actorsToList) {
-                        println("INTERMEDIATOR: sending to: " + r)
+                        //println("INTERMEDIATOR: sending to: " + r)
                         r ! ("request", cmd)
                     }
                 }
@@ -57,6 +57,14 @@ class Intermediator (replicas : ActorBag) extends Actor with Publisher {
                         replicaCmdIds = replicaCmdIds + ((repid, cmmdid))
                         onEDT(publish(Receive(repid, repstate)))
                     }
+                }
+
+                case Send("PrintArray")=>{
+                    println("!!!!!!!!!!!!!!printArray:")
+                    for(r <- replicas.actorsToList){
+                        r!("print")
+                    }
+
                 }
             }
         }
