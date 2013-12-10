@@ -1,105 +1,14 @@
-% This is "sig-alternate.tex" V2.0 May 2012
-% This file should be compiled with V2.5 of "sig-alternate.cls" May 2012
-%
-% This example file demonstrates the use of the 'sig-alternate.cls'
-% V2.5 LaTeX2e document class file. It is for those submitting
-% articles to ACM Conference Proceedings WHO DO NOT WISH TO
-% STRICTLY ADHERE TO THE SIGS (PUBS-BOARD-ENDORSED) STYLE.
-% The 'sig-alternate.cls' file will produce a similar-looking,
-% albeit, 'tighter' paper resulting in, invariably, fewer pages.
-%
-% ----------------------------------------------------------------------------------------------------------------
-% This .tex file (and associated .cls V2.5) produces:
-%       1) The Permission Statement
-%       2) The Conference (location) Info information
-%       3) The Copyright Line with ACM data
-%       4) NO page numbers
-%
-% as against the acm_proc_article-sp.cls file which
-% DOES NOT produce 1) thru' 3) above.
-%
-% Using 'sig-alternate.cls' you have control, however, from within
-% the source .tex file, over both the CopyrightYear
-% (defaulted to 200X) and the ACM Copyright Data
-% (defaulted to X-XXXXX-XX-X/XX/XX).
-% e.g.
-% \CopyrightYear{2007} will cause 2007 to appear in the copyright line.
-% \crdata{0-12345-67-8/90/12} will cause 0-12345-67-8/90/12 to appear in the copyright line.
-%
-% ---------------------------------------------------------------------------------------------------------------
-% This .tex source is an example which *does* use
-% the .bib file (from which the .bbl file % is produced).
-% REMEMBER HOWEVER: After having produced the .bbl file,
-% and prior to final submission, you *NEED* to 'insert'
-% your .bbl file into your source .tex file so as to provide
-% ONE 'self-contained' source file.
-%
-% ================= IF YOU HAVE QUESTIONS =======================
-% Questions regarding the SIGS styles, SIGS policies and
-% procedures, Conferences etc. should be sent to
-% Adrienne Griscti (griscti@acm.org)
-%
-% Technical questions _only_ to
-% Gerald Murray (murray@hq.acm.org)
-% ===============================================================
-%
-% For tracking purposes - this is V2.0 - May 2012
-
 \documentclass{sig-alternate}
 
 \begin{document}
-%
-% --- Author Metadata here ---
-%\conferenceinfo{WOODSTOCK}{'97 El Paso, Texas USA}
-%\CopyrightYear{2007} % Allows default copyright year (20XX) to be over-ridden - IF NEED BE.
-%\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE.
-% --- End of Author Metadata ---
 
 \title{Paxos Made Visual}
-%
-% You need the command \numberofauthors to handle the 'placement
-% and alignment' of the authors beneath the title.
-%
-% For aesthetic reasons, we recommend 'three authors at a time'
-% i.e. three 'name/affiliation blocks' be placed beneath the title.
-%
-% NOTE: You are NOT restricted in how many 'rows' of
-% "name/affiliations" may appear. We just ask that you restrict
-% the number of 'columns' to three.
-%
-% Because of the available 'opening page real-estate'
-% we ask you to refrain from putting more than six authors
-% (two rows with three columns) beneath the article title.
-% More than six makes the first-page appear very cluttered indeed.
-%
-% Use the \alignauthor commands to handle the names
-% and affiliations for an 'aesthetic maximum' of six authors.
-% Add names, affiliations, addresses for
-% the seventh etc. author(s) as the argument for the
-% \additionalauthors command.
-% These 'additional authors' will be output/set for you
-% without further effort on your part as the last section in
-% the body of your article BEFORE References or any Appendices.
 
-\numberofauthors{2} %  in this sample file, there are a *total*
-% of EIGHT authors. SIX appear on the 'first-page' (for formatting
-% reasons) and the remaining two appear in the \additionalauthors section.
-%
+\numberofauthors{2} 
+
 \author{
-% You can go ahead and credit any number of authors here,
-% e.g. one 'row of three' or two rows (consisting of one row of three
-% and a second row of one, two or three).
-%
-% The command \alignauthor (no curly braces needed) should
-% precede each author name, affiliation/snail-mail address and
-% e-mail address. Additionally, tag each line of
-% affiliation/address with \affaddr, and tag the
-% e-mail address with \email.
-%
-% 1st. author
 \alignauthor
 Zachary Drudi  \email{zdrudi@cs.ubc.ca}
-% 2nd. author
 \alignauthor
 Jijie Wei		\email{weijijie@cs.ubc.ca}
 }
@@ -112,23 +21,15 @@ Jijie Wei		\email{weijijie@cs.ubc.ca}
 We tried to implement a variant of the Multi-Paxos protocol. 
 \end{abstract}
 
-%% A category with the (minimum) three required fields
-%\category{H.4}{Information Systems Applications}{Miscellaneous}
-%%A category including the fourth, optional field follows...
-%\category{D.2.8}{Software Engineering}{Metrics}[complexity measures, performance measures]
-%
-%\terms{Theory}
-%
-%\keywords{ACM proceedings, \LaTeX, text tagging}
-
 \section{Introduction}
-Describe the use of Paxos - replicated state machine for fault tolerance
+Describe the use of Paxos - replicated state machine
+list of papers where it is used?
 describe our project - what does it do? what works, what doesn't?
 
 
 \section{The Protocol}
 
-The Paxos algorithm is described in many papers, and each one uses different terminology. As we used (XXX cite MP) as a starting point for our implementation, we describe the protocol using their terminology.
+The Paxos algorithm is described in many papers, and each one presents a slightly different variant of the protocol using different terminology. As we used (XXX cite MP) as a starting point for our implementation, we describe the protocol using their terminology.
 
 \subsection{Single-Round Paxos - The Synod Protocol}
 The core protocol in the algorithm 
@@ -161,7 +62,15 @@ what do replicas do...
 describe here, or in the above?
 describe differences between abstract algorithm and our implementation here
 
+\subsection{Leader Contention}
 
+Here we discuss aspects of the protocol that are treated in a cursory manner in the literature, but are crucial to a practical algorithm.
+
+First, the issue of leader contention. In the simple version outlined above, Paxos is highly vulnerable to livelocks: suppose two leaders If two leaders L1 and L2 are trying to complete phase 1 of the algorithm. L1 chooses a ballot number, and sends \textbf{p1a} messages to all acceptors. A little later, L2 chooses a ballot number and sends p1a messages. If L2 has a lower ballot number than L1, an acceptor will send a \textbf{preempted} message to L2. Now L2 will choose a higher ballot number, and broadcast \textbf{p1a} messages to acceptors. After hearing back from a majority of the acceptors, L1 will broadcast \textbf{p2a} messages. If some acceptor received L2's second \textbf{p1a} before L1's \textbf{p2a} message, it will send a \textbf{preempted} message to L1, causing L1 to repeat phase 1. This sequence of steps could repeat indefinitely, leading to livelock.
+
+There are several possible solutions to this. One is an exponential back off strategy, similar to what the TCP protocol uses (XXX reference?). Upon receiving a \textbf{preempted} message, a Leader will wait for some fixed period of time $t$ before restarting phase 1. If it is pre-empted again after restarting phase 1, it will wait for $2t$, and will continue to double the wait period until it completes phase 1 and becomes active. If a livelock situation arises, then because of the doubling timeout period, eventually some Leader will have enough time to complete phase 1 of the protocol and send out all proposals. This solution is simple, and behaves well with faults. Leaders are indefinite to node crashes; indeed this gives them a better chance of a proposal, since there are few competing Leaders active.
+
+Another approach is to use heartbeat messages. When a Leader $L$ receives a \textbf{preempted} message, it starts pinging the other Leader $L'$ who had a higher ballot number. While this Leader responds timely to pings, $L$ remains passive and does not send messages. If $L'$ does not respond to a heartbeat message within a given period, then $L$ will begin phase 1 of the protocol. This is the approach we took in our implementation.
 
 \section{Experiences}
 war stories
@@ -181,6 +90,21 @@ As we were both new to Scala, we wanted to get a prototype working as quickly as
 Our initial prototype had one leader, fixed ahead of time. We added multiple leaders relatively late in the timeline of the project, and didn't test the initial multiple leader implementation very much. We only discovered after integrating our Paxos service with the GUI that there were timing bugs with our multiple leader implementation. Unfortunately, this issue was nondeterministic, with some test runs proving successful and others deadlocking. 
 
 
+\section{Optimizations}
+
+\subsection{Garbage Collection}
+
+\subsection{Messages}
+
+The current model of message passing is extremely inefficient. Clients broadcast their commands to all Replicas, which then broadcast to all Leaders. In our current implementation, this is quadratic in the number of nodes, as each node hosts both a replica and a server. 
+
+Instead of broadcasting, the Client could simply send their request to a random Replica. If the Client hears back from the replica within a given period, then the Client knows the command has entered the system. Otherwise, it will chose another replica. Assuming a majority of Replicas are still operational, the Client will eventually pick a functioning Replica. Of course, it could avoid resending requests to Replicas it knows are unresponsive.
+
+We can take a similar approach for Replicas. Instead of broadcasting to all Leaders, Replicas should only forward their request to their co-located leader. Given our failure model is at the node level, not the actor level, if a Replica is operational then so is its co-located Leader. After receiving the \textbf{request} message, the Leader will spawn Commanders to begin phase 2 if it is active, or forward this message to the leader it is currently pinging if it is inactive.
+
+A final idea to reduce the communication bandwidth is to remove the pinging mechanism altogether in favour of the exponential back off approach. This change could work well with the above optimizations. Under this change, 
+
+hmmm not so sure about this, the leader might be waiting for a long time? bandwidth vs latency tradeoff? what is the max wait time? time for a leader to complete all phases? what about multiple leaders?
 
 \section{Conclusions}
 what we achieved, what we failed, etc.
