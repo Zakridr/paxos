@@ -16,15 +16,14 @@ class Commander(params : ActorData, l : Leader, l_replicas : ActorBag, l_accepto
     var waitfor = l_acceptors.symbolsToList
     val acc = l_acceptors.actorsToList
     val rep = l_replicas.actorsToList
-    for(s <- acc){
-        s!("accept request", pv, params)
-        //Console.println("As leader server: " + l.name + " in command I send accept reuest to " + s.name +" with pvalue:"+pv.toString())
-    }
 
     def act(){
         alive(params.port)
         register(params.id, self)
 
+        for(s <- acc){
+            s!("accept request", pv, params)
+        }
         println("!!!!!!!!!!!!!!aaaaaaaaaa"+params.id + ": STARTED")
         while(true){
             receive{

@@ -16,10 +16,6 @@ class Scout(params : ActorData, l : Leader, l_acceptors : ActorBag,  b:B_num, sl
     var scout_waitfor = l_acceptors.symbolsToList
     var pvalues = new PvalueList()
 
-    for(s <- acc){
-        s ! ("prepare request", b, slot_num, params)
-        //Console.println("As scout leader server: " + l.name + " I send prepare request to acceptor: " + s.name +" with b_num:"+b.toString())
-    }
 
     // trying to fix timing issue
     // not sure what it is...?
@@ -31,6 +27,11 @@ class Scout(params : ActorData, l : Leader, l_acceptors : ActorBag,  b:B_num, sl
         alive(params.port)
         register(params.id, self)
         println("I'm scout with id " + params.id)
+
+        for(s <- acc){
+            s ! ("prepare request", b, slot_num, params)
+            //Console.println("As scout leader server: " + l.name + " I send prepare request to acceptor: " + s.name +" with b_num:"+b.toString())
+        }
 
         while(true){
             receive{
