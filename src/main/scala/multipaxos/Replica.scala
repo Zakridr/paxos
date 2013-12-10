@@ -32,11 +32,12 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, 
     def propose(c:Command)={
         if(!replicas_decisions.exist_cmd(c)){// if command has not yet been a decision
             val s_min = min_s_num(replicas_decisions.s_set, replicas_proposals.s_set)
+            println("## I think mininum available slot number is " + s_min)
             val temp_p = new Proposal(s_min, c)
             replicas_proposals.put(temp_p)
 // TODO ... I thought we sent a message only to the local leader? why broadcast?
             (localLeader :: remoteLeaders.actorsToList).foreach( l => l ! (id, "propose", temp_p))
-            localLeader ! (id, "propose", temp_p)
+            //localLeader ! (id, "propose", temp_p)
             println("as replica server "+ id + " propose to leaders with proposal: " + temp_p.toString)
         }
     }
@@ -45,8 +46,10 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, 
     def perform(c:Command)={
         if(replicas_decisions.exist_cmd(c) && replicas_decisions.getBy_cmd(c).head.s_num < slot_num){
             slot_num += 1
+            println("ahahahahaha what's this??????")
         }else{
             this.synchronized {
+                println("&&&&&&&&&& synchronize decision to slot number " + slot_num)
                 array_content(slot_num) = c.getOp()
                 state = state.applyOp(c.getOp)
                 slot_num += 1
@@ -72,12 +75,13 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, 
                     if(replicas_proposals.exist_s(slot_num)){
                         val temp2 = replicas_proposals.getBy_s(slot_num).head
                         if(!temp1.equal(temp2)){
-                            println("As replica server: " + id + " I found the a decision took slot" + slot_num+"and repropose"+temp2.toString())
+                            //println("As replica server: " + id + " I found the a decision took slot" + slot_num+"and repropose"+temp2.toString())
                                  //I add this line so that the replicas proposal size is reasonable
                             replicas_proposals.remove(temp2)
                             propose(temp2.command)
                         }
                     }
+                    println("&&&&&&& I'm gonna perform slot_num "+ slot_num)
                     perform(temp1.command)
                     //println("As replica server: " + id + " perform decision" + p.toString())
                 }//end while
@@ -86,11 +90,11 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, 
         }//end receive
     }
      def printArray(){
-        println(id + ": print array")
+        println(id + " : print array")
         for(i <- 0 to slot_num-1){
-            print(array_content(i) + " ")
+            print("[" + i + "]= "+array_content(i) + "; ")
         }
-        println(id + ": state is: " + state.getString)
+        //println(id + ": state is: " + state.getString)
         println()
     }
 

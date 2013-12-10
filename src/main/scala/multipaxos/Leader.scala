@@ -60,10 +60,12 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
         receive{
             case (rep_id : Symbol, "propose", p : Proposal) => {
                 //println("As leader server: " + id + " I receive a proposal:" + p.toString + " from Replica" + rep_id)
-                if(!leader_proposals.exist_cmd(p.command)){
+                if(!leader_proposals.exist_s_by_p(p)){
+                //if(!leader_proposals.exist_cmd(p.command)){
                     //println("I put the request into my propsal and active is:" + active)
                     leader_proposals.put(p)
-                    if(active){  
+                    if(active){ 
+                        println("#######leader start to command with slot_num:"+p.s_num) 
                         //new Commander(this, acc, rep, new Pvalue(leader_b_num, p.s_num, p.command)).start
                         makeCommander(new Pvalue(leader_b_num, p.s_num, p.command))
                     }
@@ -84,7 +86,7 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                 
             }//end case
             case ("Sorry", b1: B_num) => {
-                println(id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
+                println("!!!! "+id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
                 // TODO, always ping if pre-empted!
                 //if(b1 > leader_b_num && active ){
                 if(b1 > leader_b_num){
@@ -108,7 +110,6 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                     // hmmm
                     // probably fine?
                     val ss_num= localReplica.slot_num
-                    //ispinging = false
                     makeScout(leader_b_num, ss_num)
                     Console.println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
                 }
@@ -116,7 +117,7 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
             case ("ping!", remote_leader_sym : Symbol) => {
                 if(active){
                     // TODO using sender here
-                    //println("I'm active leader "+ id +" I send alive msg to leader "+ remote_leader_sym)
+                    println("I'm active leader "+ id +" I send alive msg to leader "+ remote_leader_sym)
                     sender!("alive!")
                 }
             }
@@ -149,7 +150,7 @@ class Ping(params : ActorData, me : Leader, active_leader : AbstractActor, mils 
     def act(){
         alive(params.port)
         register(params.id, self)
-        println(params.id + ": STARTED")
+        //println(params.id + " : STARTED")
 
         while(true){
             val result = active_leader !? (mils, ("ping!", me.id))

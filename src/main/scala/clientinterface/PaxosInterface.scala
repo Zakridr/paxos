@@ -26,6 +26,8 @@ object PaxosInterface extends SimpleSwingApplication {
   val decrR = makeColourButton("decrease red", 'decR) 
   val decrG = makeColourButton("decrease green", 'decG) 
   val decrB = makeColourButton("decrease blue", 'decB)
+  val printArray = makeButtonArray("PrintArray")
+  
 
   def makeColourButton(label : String, msg : Symbol) = {
     new Button {
@@ -35,6 +37,17 @@ object PaxosInterface extends SimpleSwingApplication {
       reactions += {
         case ButtonClicked(b) => 
           Send(msg)
+      }
+    }
+  }
+  def makeButtonArray(label : String) = {
+    new Button {
+      text = label
+
+      listenTo(this)
+      reactions += {
+        case ButtonClicked(b) => 
+          Send("PrintArray")
       }
     }
   }
@@ -105,6 +118,7 @@ object PaxosInterface extends SimpleSwingApplication {
         contents += makeButtonBox(incrR, decrR)
         contents += makeButtonBox(incrG, decrG)
         contents += makeButtonBox(incrB, decrB)
+        contents += printArray
       }
       contents += new GridPanel(2, 3) {
           contents += makeServerDisplay('r1)
