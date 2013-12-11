@@ -23,7 +23,6 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
     var pingercount = 0
     var ispinging = false
     var currentping = makePing(this)
-    // TODO added this just now. dodgy!
 
     def makeScout(ballot : B_num, slot_num : Int) = {
         new Scout(new ActorData(params.host, port, Symbol(id.name + "s")),
@@ -88,7 +87,6 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
             case ("Sorry", b1: B_num) => {
                 println("!!!! "+id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
                 // TODO, always ping if pre-empted!
-                //if(b1 > leader_b_num && active ){
                 if(b1 > leader_b_num){
                     val active_leader = getLeader(b1.getLeader())
                     println(id +": PRE-EMPTED, starting to ping " + b1.getLeader)
