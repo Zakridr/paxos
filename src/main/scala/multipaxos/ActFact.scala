@@ -6,7 +6,7 @@ import paxutil._
 
 object ActFact {
 
-    def getHandle(id : Symbol) = select(Node("127.0.0.1", 9010), id)
+    def getHandle(id : Symbol) = select(Node("206.86.198.10", 9010), id)
 }
 
 // hardcoded to always use c1 for now
