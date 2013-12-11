@@ -1,4 +1,5 @@
 \documentclass{sig-alternate}
+\usepackage{textcomp}
 
 \begin{document}
 
@@ -22,22 +23,55 @@ We tried to implement a variant of the Multi-Paxos protocol.
 \end{abstract}
 
 \section{Introduction}
-Describe the use of Paxos - replicated state machine
-list of papers where it is used?
-describe our project - what does it do? what works, what doesn't?
+Distributed systems which use a server-client communication pattern can be thought of as a series of updates on a state machine. The server implements a state machine, and it updates its interior state in response to client requests, responding with the new state. 
 
+The Paxos protocol is used to extend this simple framework with fault tolerance. Instead of a single server node, we now have $N$, each one implementing the state machine. Paxos ensures that each node has the same state as all others at all times, even in presence of multiple clients sending requests to the system simultaneously. Furthermore, as long as a majority of the nodes remain operational, the system will still respond to client requests.
+
+Throughout this term, we have seen many distributed systems which use a designated master node for coordination \cite{dean2008mapreduce, ghemawat_google_2003}. While a single master node is simple, has low communication overhead and latency, the system may be drastically affected if the master node fails. Paxos is frequently used \cite{thekkath_frangipani:_1997, lee_petal:_1996, corbett_spanner:_2012, calder_windows_2011} to provide crash tolerance to the master node, replacing 
+Many systems use Paxos to provide fault tolerance for such components as metadata servers or master nodes, for example 
 
 \section{The Protocol}
 
-The Paxos algorithm is described in many papers, and each one presents a slightly different variant of the protocol using different terminology. As we used (XXX cite MP) as a starting point for our implementation, we describe the protocol using their terminology.
+The Paxos algorithm is described in many papers \cite{lamport_part-time_1998, lamport_paxos_2001, lampson_abcds_2001, van_renesse_paxos_2011} and each one presents a slightly different variant of the protocol using different terminology. As we used \cite{van_renesse_paxos_2011} as a starting point for our implementation, we describe the protocol using their terminology.
 
 \subsection{Single-Round Paxos - The Synod Protocol}
-The core protocol in the algorithm 
+The core protocol in Paxos is the Synod protocol. The Synod protocol achieves consensus on a single value among a group of processes. There are two types of processes in the Synod protocol, Leaders and Acceptors. Leaders propose new ballots, which consist of a ballot number and the id of the leader proposing it, and Acceptors decide whether to adopt, accept, or reject ballots they receive from Leaders. We assume there is a total ordering on ballots; this can be achieved by lexicographic comparison of ballots.
 
+Acceptors are purely reactive, and wait to receive messages from leaders. They maintain two private variables, $highest\_b$, the highest ballot they've received so far, and $accepted$, the set of proposals, which are ballot, value pairs, they've accepted. They respond to two types of messages:
+\begin{enumerate}
+	\item Phase 1 message \textlangle \textbf{p1a}, ballot\textrangle: The receiving Acceptor compares their private highest ballot with the ballot in the message. If the received ballot is greater, they update their highest ballot variable to the received ballot, and we say the Acceptor adopts the ballot. In any case, they respond to the sending Leader with the message \textlangle \textbf{p1b}, $highest\_b$, $accepted$\textrangle.
+	
+	\item Phase 2 message \textlangle \textbf{p2a}, $b$, $value$\textrangle:
+	If the Acceptor's internal $highest_b$ is less than $b$, it updates $highest_b$. Also, in this case it accepts the ballot by adding \textlangle$b$, $value$\textrangle  to $accepted$. In any event, the Acceptor responds to the sending Leader with the message \textlangle \textbf{p2b}, $highest\_b$\textrangle.
+\end{enumerate}
 
+Leaders are responsible for proposing ballots to Acceptors. 
 
-\subsection{Multiple Rounds}
-multiple round paxos...
+\begin{enumerate}
+	\item Phase 1: When a Leader decides to initiate a ballot, it chooses a ballot number $b$ and some set of Acceptors which contains a majority. It sends the message \textlangle \textbf{p1a}, $b$\textrangle to each Acceptor in this set, and waits to receive their responses. If it receives a message\textlangle \textbf{p1b}, $b'$, $v$ \textrangle with $b < b'$, then it knows there is another Leader which has proposed a higher ballot, and so it abandons this ballot and initiates a new ballot with a higher ballot number.
+	The other possibility is that $b' = b$, in which case the Leader can conclude that the Acceptor who sent this message adopted the ballot $b$. If the Leader receives such messages from a majority of Acceptors, then it proceeds to phase 2 of the Leader protocol.
+	
+	\item Phase 2: The Leader chooses the value $v$ associated with the highest ballot among all responses to its Phase 1 message, and sends the message \textlangle \textbf{p2a}, $b$, $v$ \textrangle to all responding Acceptors from Phase 1. It then waits for responses.
+	As in Phase 1, if it receives a \textlangle \textbf{p2b}, $b'$ \textrangle response from an Acceptor with a $b < b'$, then the Leader concludes it has been pre-empted by a competing Leader, and restarts Phase 1 with a higher ballot number.
+	On the other hand, if it receives responses from a majority of Acceptors with the same ballot number $b$, then the Leader concludes that its proposed value has been accepted by a majority of the Acceptors. In this case, we say the value $v$ is \textit{chosen}.
+\end{enumerate}
+
+The guarantee provided by the Synod protocol is that only one value can ever be chosen. Any future ballot will simply result in a majority of Acceptors re-accepting the previously chosen value. As an informal argument, suppose the value $v$ is chosen. By definition, a majority of Acceptors have accepted the value $v$. Consider the first Leader $L$ which proposes a ballot after $v$ is chosen. Now, since $L$ waits to hear responses from a majority of Acceptors in Phase 1 before it chooses a value to propose, it will receive a response \textlangle \textbf{p1b}, $b$, $v$\textrangle from some Acceptor that participated in the successful ballot to choose $v$. The associated ballot number $b$ must be higher than any other ballot number $L$ receives in \textbf{p1b} messages, since the fact that $v$ was chosen means $b$ beat all other ballots in existence when it was proposed, and $L$ is the first leader to conduct Phase 1 after $v$ was chosen. Thus $L$ will propose $v$ in Phase 2.
+
+Note that as stated, the Synod protocol is susceptible to livelocks.  .... XXX todo
+
+\subsection{Multi-Round Paxos}
+
+While satisfying from a theoretical perspective, agreeing on a single value once is not terribly useful. Paxos is extended to support a replicated state machine by performing the Synod protocol multiple times in rounds.
+
+There are additional processes in this model, Replicas and Clients.
+
+Replicas implement the distributed state machine. Each Replica maintains a local copy of the state of the distributed state machine, as well as the ordered list of operations performed to transition from the initial state to the currently maintained state. This state is updated as a result of commands from Clients. To ensure that all Replicas maintain the same state at the same time, even in the presence of multiple Clients issuing commands concurrently, Replicas use the Synod protocol to decide which command to perform in which order.
+
+Upon receiving a new command from a Client, a Replica begins a new instance of the Synod protocol by starting a new Leader and a new Acceptor, and forwarding the operation the client requested as well as the next available slot number it can be performed in as the value to propose to the Leader. The Leaders and Acceptors then perform the Synod protocol to achieve consensus on a value, and the Leader broadcasts the accepted value to all Replicas, which update their internal state according to the client operation chosen, and respond to the Client which sent the chosen operation to notify them that the request was performed.
+
+While conceptually clear, this iterated version of Paxos presents some implementation challenges. Our actual implementation is different, and maintains a single Acceptor, Leader, and Replica process at each node at all times. We followed the implementation strategy given in (XXX cite PMMC) quite closely, and we forward the interested reader to that paper for full details.
+
 
 \section{The Implementation}
 
@@ -114,7 +148,7 @@ what we achieved, what we failed, etc.
 % initial runs of your .tex file to
 % produce the bibliography for the citations in your paper.
 \bibliographystyle{abbrv}
-\bibliography{sigproc}  % sigproc.bib is the name of the Bibliography in this case
+\bibliography{paxos}  % sigproc.bib is the name of the Bibliography in this case
 % You must have a proper ".bib" file
 %  and remember to run:
 % latex bibtex latex latex
