@@ -32,7 +32,7 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, 
     def propose(c:Command)={
         if(!replicas_decisions.exist_cmd(c)){// if command has not yet been a decision
             val s_min = min_s_num(replicas_decisions.s_set, replicas_proposals.s_set)
-            println("## I think mininum available slot number is " + s_min)
+            //println("## I think mininum available slot number is " + s_min)
             val temp_p = new Proposal(s_min, c)
             replicas_proposals.put(temp_p)
 // TODO ... I thought we sent a message only to the local leader? why broadcast?
@@ -46,7 +46,7 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, 
     def perform(c:Command)={
         if(replicas_decisions.exist_cmd(c) && replicas_decisions.getBy_cmd(c).head.s_num < slot_num){
             slot_num += 1
-            println("ahahahahaha what's this??????")
+            
         }else{
             this.synchronized {
                 println("&&&&&&&&&& synchronize decision to slot number " + slot_num)
@@ -81,7 +81,7 @@ class Replica(params : ActorData, rLeaders : ActorBag, lLeader : AbstractActor, 
                             propose(temp2.command)
                         }
                     }
-                    println("&&&&&&& I'm gonna perform slot_num "+ slot_num)
+                    //println("&&&&&&& I'm gonna perform slot_num "+ slot_num)
                     perform(temp1.command)
                     //println("As replica server: " + id + " perform decision" + p.toString())
                 }//end while

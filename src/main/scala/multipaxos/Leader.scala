@@ -20,16 +20,18 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
     var active = false
     var leader_proposals = new ProposalList(List[Proposal]())
     var commandercount = 0
+    var scoutcount = 0
     var pingercount = 0
     var ispinging = false
     var currentping = makePing(this)
 
     def makeScout(ballot : B_num, slot_num : Int) = {
-        new Scout(new ActorData(params.host, port, Symbol(id.name + "s")),
+        new Scout(new ActorData(params.host, port, Symbol(id.name + "s" + scoutcount)),
                   this,
                   as,
                   ballot,
                   slot_num).start
+        scoutcount += 1
     }
 
     def makeCommander(pv : Pvalue) = {
@@ -74,7 +76,7 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
             case ("adopted", b : B_num, pvals : PvalueList) => {
                 leader_proposals = leader_proposals.Xor(pvals.Pmax())
                 println(id + ": ADOPTED, proposals to send:")
-                leader_proposals.print()
+                //leader_proposals.print()
 
                 for(e <- leader_proposals.prlist){
                     //new Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command)).start
@@ -86,15 +88,13 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
             }//end case
             case ("Sorry", b1: B_num) => {
                 // TODO, always ping if pre-empted!
-                if(b1 > leader_b_num && !ispinging){
-                    println("!!!! "+id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
+                if(b1 > leader_b_num ){
+                    //println("!!!! "+id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
                     val active_leader = getLeader(b1.getLeader())
                     println(id +": PRE-EMPTED, starting to ping " + b1.getLeader)
                     active = false
                     //now I start ping the current active leader until it is unavailable
-                    if(ispinging){
-                        currentping !("exit ping!")
-                    }
+                 
                     currentping = makePing(active_leader)
                     currentping.start
                     ispinging = true
@@ -115,7 +115,7 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
             case ("ping!", remote_leader_sym : Symbol) => {
                 if(active){
                     // TODO using sender here
-                    println("I'm active leader "+ id +" I send alive msg to leader "+ remote_leader_sym)
+                    //println("I'm active leader "+ id +" I send alive msg to leader "+ remote_leader_sym)
                     sender!("alive!")
                 }
             }

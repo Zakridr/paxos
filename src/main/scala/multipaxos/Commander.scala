@@ -24,11 +24,11 @@ class Commander(params : ActorData, l : Leader, l_replicas : ActorBag, l_accepto
         for(s <- acc){
             s!("accept request", pv, params)
         }
-        println("!!!!!!!!!!!!!!aaaaaaaaaa"+params.id + ": STARTED")
+        //println("!!!!!!!!!!!!!!aaaaaaaaaa"+params.id + ": STARTED")
         while(true){
             receive{
                 case ("accept reply", acc_id : Symbol, b : B_num) => {
-                    println("hello hello hello I got one accept reply with s_num "+ pv.s_num)
+                    //println("hello hello hello I got one accept reply with s_num "+ pv.s_num)
                     if(b.equal(pv.get_B_num())){
                         waitfor = waitfor diff List(acc_id)
                         //println("commander's waitfor length: "+ waitfor.length)
