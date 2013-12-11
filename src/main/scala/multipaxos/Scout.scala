@@ -45,9 +45,7 @@ class Scout(params : ActorData, l : Leader, l_acceptors : ActorBag,  b:B_num, sl
                     if(b.equal(b1)){
                         pvalues.putList(r)
                         scout_waitfor = scout_waitfor diff List(acc_id)
-                        ////println("now waitfor length is: "+ scout_waitfor.length + " acceptors length/2 is: "+ acc.length/2)
-                        if(scout_waitfor.length < (acc.length/2)){
-                            //println("scout " + id + ": we got adopted")
+                        if(scout_waitfor.length < acc.length/2 + (acc.length % 2)){
                             l!("adopted", b, pvalues)
                             exit()
                         }

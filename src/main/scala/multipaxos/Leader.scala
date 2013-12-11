@@ -20,16 +20,16 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
     var active = false
     var leader_proposals = new ProposalList(List[Proposal]())
     var commandercount = 0
-    var pingercount = 0
-    var ispinging = false
-    var currentping = makePing(this)
+    var scoutcount = 0
+    var waitTime = 100
 
     def makeScout(ballot : B_num, slot_num : Int) = {
-        new Scout(new ActorData(params.host, port, Symbol(id.name + "s")),
+        new Scout(new ActorData(params.host, port, Symbol(id.name + "s" + scoutcount)),
                   this,
                   as,
                   ballot,
                   slot_num).start
+        scoutcount += 1
     }
 
     def makeCommander(pv : Pvalue) = {
@@ -41,15 +41,6 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
         commandercount = commandercount + 1
     }
 
-    def makePing(activeLeader: AbstractActor):Ping = {
-       val result =  new Ping(new ActorData(params.host, port, Symbol(params.id.name + "p" + pingercount)),
-                 this,
-                 activeLeader,
-                 pingtimeout)
-        pingercount = pingercount + 1
-        return result
-    }
-
     def getLeader(l_id : Symbol) : AbstractActor = leaders.getActBySym(l_id)
 
     def Leaderfun(l_acceptors : ActorBag, l_replicas : ActorBag) = {
@@ -58,14 +49,9 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
 
         receive{
             case (rep_id : Symbol, "propose", p : Proposal) => {
-                //println("As leader server: " + id + " I receive a proposal:" + p.toString + " from Replica" + rep_id)
                 if(!leader_proposals.exist_s_by_p(p)){
-                //if(!leader_proposals.exist_cmd(p.command)){
-                    //println("I put the request into my propsal and active is:" + active)
                     leader_proposals.put(p)
                     if(active){ 
-                        println("#######leader start to command with slot_num:"+p.s_num) 
-                        //new Commander(this, acc, rep, new Pvalue(leader_b_num, p.s_num, p.command)).start
                         makeCommander(new Pvalue(leader_b_num, p.s_num, p.command))
                     }
                 }//end if
@@ -77,46 +63,23 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                 leader_proposals.print()
 
                 for(e <- leader_proposals.prlist){
-                    //new Commander(this, acc, rep, new Pvalue(leader_b_num, e.s_num, e.command)).start
                     makeCommander(new Pvalue(leader_b_num, e.s_num, e.command))
-                    //println("ok, returned from function command")
                 }// end for
                 active = true
-                
+                // reset wait time
+                waitTime = 100
             }//end case
             case ("Sorry", b1: B_num) => {
-                // TODO, always ping if pre-empted!
-                if(b1 > leader_b_num && !ispinging){
-                    println("!!!! "+id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
-                    val active_leader = getLeader(b1.getLeader())
-                    println(id +": PRE-EMPTED, starting to ping " + b1.getLeader)
+                // I think this test is pointless
+                if(b1 > leader_b_num) { 
                     active = false
-                    //now I start ping the current active leader until it is unavailable
-                    if(ispinging){
-                        currentping !("exit ping!")
-                    }
-                    currentping = makePing(active_leader)
-                    currentping.start
-                    ispinging = true
-                   
-                }
-            }
-            case ("scout")=>{
-                if(!active){
-                    leader_b_num = new B_num(leader_b_num.b_num+1, id)
-                    // TODO 
-                    // hmmm
-                    // probably fine?
-                    val ss_num= localReplica.slot_num
-                    makeScout(leader_b_num, ss_num)
-                    Console.println("As leader server: " + id + " in Leaderfun I scout with b_num:" + leader_b_num.toString())
-                }
-            }
-            case ("ping!", remote_leader_sym : Symbol) => {
-                if(active){
-                    // TODO using sender here
-                    println("I'm active leader "+ id +" I send alive msg to leader "+ remote_leader_sym)
-                    sender!("alive!")
+                    println(id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
+                    waitTime += 100
+                    Thread.sleep(waitTime)
+                    leader_b_num = new B_num(leader_b_num.b_num + 1, id)
+                    // this is very bad, but hopefully it doesn't matter if its out of date
+                    // still might get a piece of the integer...
+                    makeScout(leader_b_num, localReplica.slot_num)
                 }
             }
                 //to simulate the case when the active leader died
@@ -131,33 +94,12 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
         register(id, self)
 
         //share the slot_num from its co-located replica
-        //println("I'm leader " + id + " and I'm sending prepare request")
         val ss_num = localReplica.slot_num
         makeScout(leader_b_num, ss_num)
-        //new Scout(this, params, acceptors, leader_b_num, ss_num).start
 
         println("I'm leader " + id + " and I started my scout")
         while(true){
              Leaderfun(acceptors, replicas)
-        }
-    }
-}
-
-// this actor(thread) send synchronize msg to the active leader, if no response within mils seconds,scout and exit
-class Ping(params : ActorData, me : Leader, active_leader : AbstractActor, mils : Int) extends Actor{
-    def act(){
-        alive(params.port)
-        register(params.id, self)
-        //println(params.id + " : STARTED")
-
-        while(true){
-            val result = active_leader !? (mils, ("ping!", me.id))
-            //println("I'm leader " + me.id +" I got ping result: " + result)
-            if(result== None){
-                println(params.id + ": PING NO ANSWER")
-                me!("scout")
-                exit()
-            }
         }
     }
 }

@@ -28,7 +28,6 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
         receive{               
             case ("prepare request", b:B_num, slot_num:Int, scoutdata : ActorData) =>{
                 val scout = scoutdata.makeActorHandle
-                //println("I'm server:"+ id +" I got prepare request")
                 if(b > acceptor_b_num){
                     acceptor_b_num = b
                 }
@@ -39,17 +38,14 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
 
             }//end case
             case ("accept request", p:Pvalue, cmmdrdata : ActorData) =>{
-                //println("server "+ id + " find a accept request match")
                 val cmmdr = cmmdrdata.makeActorHandle
 
                 if(p.get_B_num() >= acceptor_b_num){
                     acceptor_b_num = p.get_B_num()
                     acceptor_accepted.put(p)
                 }
-                println("hello, hello, hello, I receive  accept request with slot_num "+p.s_num )
                 cmmdr ! ("accept reply", id, acceptor_b_num)
                 
-                //Console.println("As accecptor server: " + id + " reply accept request with b_num:" + acceptor_b_num.toString())
             }// end case
         }//end receive
     }//end Acceptor_fun
@@ -58,7 +54,7 @@ class Acceptor(params:ActorData, ls : ActorBag) extends Actor{
         alive(port)
         register(id, self)
         
-        println("acceptor: " + id + "Started")
+        println(id + ": STARTED")
         while(true){
             Acceptor_fun()
         }//end while
