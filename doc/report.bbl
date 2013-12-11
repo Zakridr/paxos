@@ -1,0 +1,61 @@
+\begin{thebibliography}{10}
+
+\bibitem{calder_windows_2011}
+B.~Calder, J.~Wang, A.~Ogus, N.~Nilakantan, A.~Skjolsvold, S.~{McKelvie},
+  Y.~Xu, S.~Srivastav, J.~Wu, and H.~Simitci.
+\newblock Windows azure storage: a highly available cloud storage service with
+  strong consistency.
+\newblock In {\em Proceedings of the Twenty-Third {ACM} Symposium on Operating
+  Systems Principles}, pages 143--157, 2011.
+
+\bibitem{corbett_spanner:_2012}
+J.~C. Corbett, J.~Dean, M.~Epstein, A.~Fikes, C.~Frost, J.~J. Furman,
+  S.~Ghemawat, A.~Gubarev, C.~Heiser, and P.~Hochschild.
+\newblock Spanner: Google's globally-distributed database.
+\newblock In {\em Proceedings of {OSDI}}, volume~1, 2012.
+
+\bibitem{dean2008mapreduce}
+J.~Dean and S.~Ghemawat.
+\newblock Mapreduce: simplified data processing on large clusters.
+\newblock {\em Communications of the ACM}, 51(1):107--113, 2008.
+
+\bibitem{ghemawat_google_2003}
+S.~Ghemawat, H.~Gobioff, and S.-T. Leung.
+\newblock The google file system.
+\newblock In {\em {ACM} {SIGOPS} Operating Systems Review}, volume~37, page
+  29?43, 2003.
+
+\bibitem{lamport_part-time_1998}
+L.~Lamport.
+\newblock The part-time parliament.
+\newblock {\em {ACM} Transactions on Computer Systems {(TOCS)}}, 16(2):13--169,
+  1998.
+
+\bibitem{lamport_paxos_2001}
+L.~Lamport.
+\newblock Paxos made simple.
+\newblock {\em {ACM} Sigact News}, 32(4):18--25, 2001.
+
+\bibitem{lampson_abcds_2001}
+B.~Lampson.
+\newblock The {ABCD's} of paxos.
+\newblock In {\em {PODC}}, volume~1, page~13, 2001.
+
+\bibitem{lee_petal:_1996}
+E.~K. Lee and C.~A. Thekkath.
+\newblock Petal: Distributed virtual disks.
+\newblock In {\em {ACM} {SIGOPS} Operating Systems Review}, volume~30, pages
+  84--92, 1996.
+
+\bibitem{thekkath_frangipani:_1997}
+C.~A. Thekkath, T.~Mann, and E.~K. Lee.
+\newblock Frangipani: A scalable distributed file system.
+\newblock In {\em {ACM} {SIGOPS} Operating Systems Review}, volume~31, pages
+  224--237, 1997.
+
+\bibitem{van_renesse_paxos_2011}
+R.~Van~Renesse.
+\newblock Paxos made moderately complex.
+\newblock {\em Cited on}, 2011.
+
+\end{thebibliography}
