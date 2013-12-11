@@ -83,10 +83,10 @@ object PaxosInterface extends SimpleSwingApplication {
     title = "Paxos Colour Test"
 
     // *** this is for the local demo...
-    val bstraps = List("local1.csv", "local2.csv", "local3.csv", "local4.csv", "local5.csv").map(fname => new Bootstrapper(fname))
-    val initstate = new DemoData(new Colour(0, 0, 0))
-    val servers = bstraps.map(bs => new Server(bs, initstate))
-    servers.foreach(_.start)                  
+//    val bstraps = List("local1.csv", "local2.csv", "local3.csv", "local4.csv", "local5.csv").map(fname => new Bootstrapper(fname))
+//    val initstate = new DemoData(new Colour(0, 0, 0))
+//    val servers = bstraps.map(bs => new Server(bs, initstate))
+//    servers.foreach(_.start)                  
     // *** end local demo stuff
 
     contents = new BoxPanel(Orientation.Vertical) {

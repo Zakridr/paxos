@@ -22,7 +22,7 @@ case class Send(event: Any)(implicit intermediator: Intermediator) {
 case class Receive(event: Any) extends Event
 
 class Intermediator (replicas : ActorBag) extends Actor with Publisher {
-    val mydata = new ActorData("127.0.0.1", 9010, 'c1)
+    val mydata = new ActorData("127.0.0.1", 9000, 'c1)
 
     var replicaCmdIds = replicas.symbolsToList.map( repid => (repid, -1)).toMap
     var cmmdNum = 0
