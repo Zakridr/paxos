@@ -85,15 +85,15 @@ class Leader(params : ActorData, localReplica : Replica, ls : ActorBag, rs : Act
                 
             }//end case
             case ("Sorry", b1: B_num) => {
-                println("!!!! "+id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
                 // TODO, always ping if pre-empted!
-                if(b1 > leader_b_num){
+                if(b1 > leader_b_num && !ispinging){
+                    println("!!!! "+id +": PRE-EMPTED by " + b1.getLeader + ", ballot was: " + b1 + ", my ballot is: " + leader_b_num + ", comparison result is : " + (b1 > leader_b_num) + ", I am active: " + active)
                     val active_leader = getLeader(b1.getLeader())
                     println(id +": PRE-EMPTED, starting to ping " + b1.getLeader)
                     active = false
                     //now I start ping the current active leader until it is unavailable
                     if(ispinging){
-                        currentping !?("exit ping!")
+                        currentping !("exit ping!")
                     }
                     currentping = makePing(active_leader)
                     currentping.start
@@ -157,11 +157,6 @@ class Ping(params : ActorData, me : Leader, active_leader : AbstractActor, mils 
                 println(params.id + ": PING NO ANSWER")
                 me!("scout")
                 exit()
-            }
-            receive{
-                case ("exit ping!")=>{
-                    exit()
-                }
             }
         }
     }

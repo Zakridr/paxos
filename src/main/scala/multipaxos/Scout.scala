@@ -20,7 +20,11 @@ class Scout(params : ActorData, l : Leader, l_acceptors : ActorBag,  b:B_num, sl
     // trying to fix timing issue
     // not sure what it is...?
     def messageHoldouts() = {
-        scout_waitfor.foreach( acc_id => l_acceptors.getActBySym(acc_id) ! ("prepare request", b, slot_num, params))
+        for (accid <- scout_waitfor) {
+            println(params.id + ": sending wakeup to accid:" + accid + ", ref: " + l_acceptors.getActBySym(accid))
+            l_acceptors.getActBySym(accid) ! ("prepare request", b, slot_num, params)
+        }
+        //scout_waitfor.foreach( acc_id => l_acceptors.getActBySym(acc_id) ! ("prepare request", b, slot_num, params))
     }
 
     def act(){
@@ -30,11 +34,10 @@ class Scout(params : ActorData, l : Leader, l_acceptors : ActorBag,  b:B_num, sl
 
         for(s <- acc){
             s ! ("prepare request", b, slot_num, params)
-            //Console.println("As scout leader server: " + l.name + " I send prepare request to acceptor: " + s.name +" with b_num:"+b.toString())
         }
 
         while(true){
-            receive{
+            receiveWithin(500){
                 case ("prepare reply", acc_id : Symbol, b1:B_num, r:PvalueList) =>{
                     //Console.println("As scout leader server: " + l.name + " I got repare request from" + s.name+ " with its accepted pvaluelist:")
                     //r.print()
@@ -56,6 +59,7 @@ class Scout(params : ActorData, l : Leader, l_acceptors : ActorBag,  b:B_num, sl
                         exit()
                     }
                 }//end case
+                case TIMEOUT => messageHoldouts()
             }//end receive
         }// end while
     }
